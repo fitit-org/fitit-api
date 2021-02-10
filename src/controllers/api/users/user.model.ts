@@ -12,10 +12,9 @@ export const UserSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    class_ids: {
-      type: [mongoose.Schema.Types.ObjectId],
-      required: true,
-    },
+    class_ids: [
+      { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Class' },
+    ],
     hashedPassword: {
       type: String,
       required: true,
@@ -41,9 +40,9 @@ export const UserSchema = new mongoose.Schema(
       type: Boolean,
       required: true,
     },
-    activityLog_ids: {
-      type: [mongoose.Schema.Types.ObjectId],
-    },
+    activityLog_ids: [
+      { type: mongoose.Schema.Types.ObjectId, ref: 'ActivityLog' },
+    ],
     birthDate: {
       type: Date,
     },
