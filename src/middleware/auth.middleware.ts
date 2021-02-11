@@ -5,6 +5,7 @@ import RequestWithUser from '../types/requestWithUser.interface';
 import AuthenticationTokenMissingException from '../exceptions/AuthenticationTokenMissingException';
 import WrongAuthenticationTokenException from '../exceptions/WrongAuthenticationTokenException';
 import DataStoredInToken from '../types/dataStoredInToken.interface';
+import DBException from '../exceptions/DBException';
 
 async function authMiddleware(
   request: RequestWithUser,
@@ -20,12 +21,17 @@ async function authMiddleware(
         secret
       ) as DataStoredInToken;
       const id = verificationResponse._id;
-      const user = await userModel.findById(id);
-      if (user) {
-        request.user = user;
-        next();
-      } else {
-        next(new WrongAuthenticationTokenException());
+      try {
+        const user = await userModel.findById(id).exec();
+        if (user) {
+          request.user = user;
+          next();
+        } else {
+          next(new WrongAuthenticationTokenException());
+        }
+      } catch (error) {
+        console.log(error.stack);
+        next(new DBException());
       }
     } catch (error) {
       next(new WrongAuthenticationTokenException());

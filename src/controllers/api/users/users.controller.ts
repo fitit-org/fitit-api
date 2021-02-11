@@ -27,12 +27,14 @@ class UsersController {
 
   public initializeRoutes(): void {
     this.router.get(this.path, authMiddleware, this.getCurrentUser);
+    this.router.get(`${this.path}/:id`, authMiddleware, this.getUser);
     this.router.patch(
       this.path,
       authMiddleware,
       validationMiddleware(UserDto, true),
       this.changeUserData
     );
+    this.router.delete(this.path, authMiddleware, this.removeUser);
   }
 
   private getCurrentUser = async (
@@ -54,7 +56,12 @@ class UsersController {
           'name surname email birthDate dateCreated weight height activityLog_ids class_ids isActive isTeacher'
         )
         .exec();
-      response.send(user);
+      if (user) {
+        response.send(user);
+      } else {
+        // TODO: Critical! Invalidate token here
+        next(new UserNotFoundException(request.user._id));
+      }
     } catch (error) {
       console.log(error.stack);
       next(new DBException());
@@ -67,7 +74,7 @@ class UsersController {
     next: NextFunction
   ) => {
     try {
-      const user = await this.user.findById(request.params._id);
+      const user = await this.user.findById(request.params._id).exec();
       if (user) {
         if (request.user._id === user._id) {
           try {
@@ -144,6 +151,45 @@ class UsersController {
         )
         .exec();
       response.send(user);
+    } catch (error) {
+      console.log(error.stack);
+      next(new DBException());
+    }
+  };
+
+  private removeUser = async (
+    request: RequestWithUser,
+    response: Response,
+    next: NextFunction
+  ) => {
+    try {
+      try {
+        const userActivities = await this.user
+          .findById(request.user._id)
+          .select('activityLog_ids -_id')
+          .exec();
+        let activityRemovalSuccess: unknown;
+        if (userActivities) {
+          activityRemovalSuccess = await this.activityLog
+            .findByIdAndDelete(userActivities)
+            .exec();
+        } else {
+          activityRemovalSuccess = true;
+        }
+        const userRemovalSuccess = await this.user.findByIdAndDelete(
+          request.user._id
+        );
+        if (activityRemovalSuccess && userRemovalSuccess) {
+          response.send(200);
+          // Client should remove the token here
+          // TODO: Invalidate the token server-side
+        } else {
+          next(new DBException());
+        }
+      } catch (error) {
+        console.log(error.stack);
+        next(new DBException());
+      }
     } catch (error) {
       console.log(error.stack);
       next(new DBException());
