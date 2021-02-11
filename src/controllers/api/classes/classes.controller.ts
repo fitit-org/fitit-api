@@ -4,14 +4,21 @@ import RequestWithUser from '../../../types/requestWithUser.interface';
 import authMiddleware from '../../../middleware/auth.middleware';
 import classModel from './class.model';
 import userModel from '../users/user.model';
+import activityLogModel from '../activityLogs/activityLog.model';
+import activityTypeModel from '../activityTypes/activityType.model';
 import ClassNotFoundException from '../../../exceptions/ClassNotFoundException';
 import UnauthorizedToViewClassException from '../../../exceptions/UnauthorizedToViewClassException';
+import DBException from '../../../exceptions/DBException';
+import UserNotTeacherException from '../../../exceptions/UserNotTeacherException';
+import { getHR } from 'reversible-human-readable-id';
 
 class ClassesController implements Controller {
   public path = '/classes';
   public router = Router();
   private class = classModel;
   private user = userModel;
+  private activityLog = activityLogModel;
+  private activityType = activityTypeModel;
 
   constructor() {
     this.initializeRoutes();
@@ -20,11 +27,25 @@ class ClassesController implements Controller {
   private initializeRoutes() {
     this.router.get(this.path, authMiddleware, this.getAllClasses);
     this.router.get(`${this.path}/:id`, authMiddleware, this.getClassById);
+    this.router.get(
+      `${this.path}/:id/users`,
+      authMiddleware,
+      this.getClassUsers
+    );
   }
 
-  private getAllClasses = async (request: Request, response: Response) => {
-    const classes = await this.class.find();
-    response.send(classes);
+  private getAllClasses = async (
+    request: Request,
+    response: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const classes = await this.class.find().exec();
+      response.send(classes);
+    } catch (error) {
+      console.log(error.stack);
+      next(new DBException());
+    }
   };
 
   private getClassById = async (
@@ -33,11 +54,16 @@ class ClassesController implements Controller {
     next: NextFunction
   ) => {
     const id = request.params.id;
-    const classObject = this.class.findById(id);
-    if (classObject) {
-      response.send(classObject);
-    } else {
-      next(new ClassNotFoundException(id));
+    try {
+      const classObject = await this.class.findById(id).exec();
+      if (classObject) {
+        response.send(classObject);
+      } else {
+        next(new ClassNotFoundException(id));
+      }
+    } catch (error) {
+      console.log(error.stack);
+      next(new DBException());
     }
   };
 
@@ -46,21 +72,64 @@ class ClassesController implements Controller {
     response: Response,
     next: NextFunction
   ) => {
-    const classObject = await this.class.findById(request.params.id);
-    if (classObject) {
-      if (request.user.class_ids.includes(classObject._id)) {
-        const users = await this.user
-          .find({ class_ids: classObject._id })
-          .select(
-            'name surname activityLog_ids isActive isTeacher birthDate height weight'
-          )
-          .populate('activityLog_ids');
-        response.send(users);
+    try {
+      const classObject = await this.class.findById(request.params.id).exec();
+      if (classObject) {
+        if (request.user.class_ids.includes(classObject._id)) {
+          try {
+            const users = await this.user
+              .find({ class_ids: classObject._id })
+              .populate({
+                path: 'activityLog_ids',
+                populate: {
+                  path: 'activityType_id',
+                },
+              })
+              .select(
+                'name surname activityLog_ids isActive isTeacher birthDate height weight'
+              )
+              .exec();
+            response.send(users);
+          } catch (error) {
+            console.log(error.stack);
+            next(new DBException());
+          }
+        } else {
+          next(new UnauthorizedToViewClassException(request.params.id));
+        }
       } else {
-        next(new UnauthorizedToViewClassException(request.params.id));
+        next(new ClassNotFoundException(request.params.id));
       }
-    } else {
-      next(new ClassNotFoundException(request.params.id));
+    } catch (error) {
+      console.log(error.stack);
+      next(new DBException());
+    }
+  };
+
+  private genClassCode = async (
+    request: RequestWithUser,
+    response: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const classObject = await this.class.findById(request.params.id).exec();
+      if (classObject) {
+        if (request.user.class_ids.includes(classObject._id)) {
+          if (request.user.isTeacher) {
+            const classIdHash = { code: getHR(classObject._id) };
+            response.send(classIdHash);
+          } else {
+            next(new UserNotTeacherException());
+          }
+        } else {
+          next(new UnauthorizedToViewClassException(request.params.id));
+        }
+      } else {
+        next(new ClassNotFoundException(request.params.id));
+      }
+    } catch (error) {
+      console.log(error.stack);
+      next(new DBException());
     }
   };
 }

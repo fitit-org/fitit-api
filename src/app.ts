@@ -46,6 +46,7 @@ class App {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
+    mongoose.set('useCreateIndex', true);
   }
 
   public listen(): void {
