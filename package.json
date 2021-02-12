@@ -6,6 +6,7 @@
   "scripts": {
     "start": "tsc && node dist/server.js",
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/server.ts",
+    "gen-docs": "node genDocs.js",
     "lint": "eslint ./src",
     "lint:fix": "eslint ./src --fix"
   },
@@ -38,7 +39,8 @@
     "nodemon": "^2.0.7",
     "prettier": "^2.2.1",
     "ts-node": "^9.1.1",
-    "typescript": "^4.1.3"
+    "typescript": "^4.1.3",
+    "widdershins": "^4.0.1"
   },
   "dependencies": {
     "bcrypt": "^5.0.0",

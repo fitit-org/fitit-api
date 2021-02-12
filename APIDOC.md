@@ -1,14 +1,9 @@
 ---
 title: FitIT API v1.0.0
 language_tabs:
-  - shell: Shell
   - http: HTTP
   - javascript: JavaScript
-  - ruby: Ruby
-  - python: Python
-  - php: PHP
-  - java: Java
-  - go: Go
+  - javascript--nodejs: Node.JS
 toc_footers: []
 includes: []
 search: true
@@ -45,153 +40,6 @@ Login or register
 
 ## post__auth_login
 
-> Code samples
-
-```shell
-# You can also use wget
-curl -X POST https://api.fitit.tk/api/v1/auth/login \
-  -H 'Content-Type: application/json' \
-  -H 'Accept: application/json'
-
-```
-
-```http
-POST https://api.fitit.tk/api/v1/auth/login HTTP/1.1
-Host: api.fitit.tk
-Content-Type: application/json
-Accept: application/json
-
-```
-
-```javascript
-const inputBody = '{
-  "email": "email@example.com",
-  "password": "qwerty2137"
-}';
-const headers = {
-  'Content-Type':'application/json',
-  'Accept':'application/json'
-};
-
-fetch('https://api.fitit.tk/api/v1/auth/login',
-{
-  method: 'POST',
-  body: inputBody,
-  headers: headers
-})
-.then(function(res) {
-    return res.json();
-}).then(function(body) {
-    console.log(body);
-});
-
-```
-
-```ruby
-require 'rest-client'
-require 'json'
-
-headers = {
-  'Content-Type' => 'application/json',
-  'Accept' => 'application/json'
-}
-
-result = RestClient.post 'https://api.fitit.tk/api/v1/auth/login',
-  params: {
-  }, headers: headers
-
-p JSON.parse(result)
-
-```
-
-```python
-import requests
-headers = {
-  'Content-Type': 'application/json',
-  'Accept': 'application/json'
-}
-
-r = requests.post('https://api.fitit.tk/api/v1/auth/login', headers = headers)
-
-print(r.json())
-
-```
-
-```php
-<?php
-
-require 'vendor/autoload.php';
-
-$headers = array(
-    'Content-Type' => 'application/json',
-    'Accept' => 'application/json',
-);
-
-$client = new \GuzzleHttp\Client();
-
-// Define array of request body.
-$request_body = array();
-
-try {
-    $response = $client->request('POST','https://api.fitit.tk/api/v1/auth/login', array(
-        'headers' => $headers,
-        'json' => $request_body,
-       )
-    );
-    print_r($response->getBody()->getContents());
- }
- catch (\GuzzleHttp\Exception\BadResponseException $e) {
-    // handle exception or api errors.
-    print_r($e->getMessage());
- }
-
- // ...
-
-```
-
-```java
-URL obj = new URL("https://api.fitit.tk/api/v1/auth/login");
-HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-con.setRequestMethod("POST");
-int responseCode = con.getResponseCode();
-BufferedReader in = new BufferedReader(
-    new InputStreamReader(con.getInputStream()));
-String inputLine;
-StringBuffer response = new StringBuffer();
-while ((inputLine = in.readLine()) != null) {
-    response.append(inputLine);
-}
-in.close();
-System.out.println(response.toString());
-
-```
-
-```go
-package main
-
-import (
-       "bytes"
-       "net/http"
-)
-
-func main() {
-
-    headers := map[string][]string{
-        "Content-Type": []string{"application/json"},
-        "Accept": []string{"application/json"},
-    }
-
-    data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("POST", "https://api.fitit.tk/api/v1/auth/login", data)
-    req.Header = headers
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    // ...
-}
-
-```
-
 `POST /auth/login`
 
 *Authorize and get a token*
@@ -200,8 +48,23 @@ func main() {
 
 ```json
 {
-  "email": "email@example.com",
-  "password": "qwerty2137"
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string",
+      "description": "User's email",
+      "example": "email@example.com"
+    },
+    "password": {
+      "type": "string",
+      "description": "User's password",
+      "example": "qwerty2137"
+    }
+  },
+  "required": [
+    "email",
+    "password"
+  ]
 }
 ```
 
@@ -210,6 +73,8 @@ func main() {
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |body|body|[LoginData](#schemalogindata)|true|User's email and password|
+|» email|body|string|true|User's email|
+|» password|body|string|true|User's password|
 
 > Example responses
 
@@ -217,25 +82,119 @@ func main() {
 
 ```json
 {
-  "user": {
-    "class_ids": [
-      "601bd55f22c26a2ef9298df3"
-    ],
-    "_id": "601be28e50364b654dec42cf",
-    "isActive": true,
-    "isTeacher": false,
-    "name": "James",
-    "surname": "Smith",
-    "activityLog_ids": [
-      "601bef6a25c8480b19dd54cd"
-    ],
-    "email": "email@example.com",
-    "birthDate": "2001-01-04T23:00:00.000Z",
-    "dateCreated": "2021-02-04T12:03:26.000Z",
-    "height": 182,
-    "weight": 60
+  "type": "object",
+  "properties": {
+    "user": {
+      "allOf": [
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "properties": {
+                "class_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "description": "IDs of classes the user belongs to",
+                    "example": "601bd55f22c26a2ef9298df3"
+                  }
+                },
+                "_id": {
+                  "type": "string",
+                  "description": "User's ID",
+                  "example": "601be28e50364b654dec42cf"
+                },
+                "isActive": {
+                  "type": "boolean",
+                  "description": "Was the user's account active",
+                  "example": true
+                },
+                "isTeacher": {
+                  "type": "boolean",
+                  "description": "Is the user a teacher",
+                  "example": false
+                },
+                "name": {
+                  "type": "string",
+                  "description": "User's name",
+                  "example": "James"
+                },
+                "surname": {
+                  "type": "string",
+                  "description": "User's surname",
+                  "example": "Smith"
+                }
+              },
+              "required": [
+                "class_ids",
+                "_id",
+                "isActive",
+                "isTeacher",
+                "name",
+                "surname"
+              ]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "activityLog_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "description": "IDs of activities the user performed",
+                    "example": "601bef6a25c8480b19dd54cd"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "email": {
+              "type": "string",
+              "description": "User's email address",
+              "example": "email@example.com"
+            },
+            "birthDate": {
+              "type": "string",
+              "description": "User's date of birth",
+              "example": "2001-01-04T23:00:00.000Z"
+            },
+            "dateCreated": {
+              "type": "string",
+              "description": "The date of account's creation",
+              "example": "2021-02-04T12:03:26.000Z"
+            },
+            "height": {
+              "type": "number",
+              "description": "User's height",
+              "example": 182
+            },
+            "weight": {
+              "type": "number",
+              "description": "User's weight",
+              "example": 60
+            }
+          },
+          "required": [
+            "email",
+            "dateCreated"
+          ]
+        }
+      ]
+    },
+    "token": {
+      "type": "string",
+      "description": "Authorization JWT token",
+      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MDFiZTI4ZTUwMzY0YjY1NGRlYzQyY2YiLCJpYXQiOjE2MTMxMjQyMTksImV4cCI6MTYxMzcyOTAxOX0.FC_DqIJewnn01qL3LdYumNaiLY8W5yEmAhQ7ahkbGqw"
+    }
   },
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MDFiZTI4ZTUwMzY0YjY1NGRlYzQyY2YiLCJpYXQiOjE2MTMxMjQyMTksImV4cCI6MTYxMzcyOTAxOX0.FC_DqIJewnn01qL3LdYumNaiLY8W5yEmAhQ7ahkbGqw"
+  "required": [
+    "user",
+    "token"
+  ]
 }
 ```
 
@@ -304,160 +263,6 @@ This operation does not require authentication
 
 ## post__auth_register
 
-> Code samples
-
-```shell
-# You can also use wget
-curl -X POST https://api.fitit.tk/api/v1/auth/register \
-  -H 'Content-Type: application/json' \
-  -H 'Accept: application/json'
-
-```
-
-```http
-POST https://api.fitit.tk/api/v1/auth/register HTTP/1.1
-Host: api.fitit.tk
-Content-Type: application/json
-Accept: application/json
-
-```
-
-```javascript
-const inputBody = '{
-  "email": "email@example.com",
-  "password": "qwerty2137",
-  "name": "James",
-  "surname": "Smith",
-  "classId": "dzikie-węże",
-  "birthDate": "2001-01-04T23:00:00.000Z",
-  "height": 180,
-  "weight": 60,
-  "isTeacher": false
-}';
-const headers = {
-  'Content-Type':'application/json',
-  'Accept':'application/json'
-};
-
-fetch('https://api.fitit.tk/api/v1/auth/register',
-{
-  method: 'POST',
-  body: inputBody,
-  headers: headers
-})
-.then(function(res) {
-    return res.json();
-}).then(function(body) {
-    console.log(body);
-});
-
-```
-
-```ruby
-require 'rest-client'
-require 'json'
-
-headers = {
-  'Content-Type' => 'application/json',
-  'Accept' => 'application/json'
-}
-
-result = RestClient.post 'https://api.fitit.tk/api/v1/auth/register',
-  params: {
-  }, headers: headers
-
-p JSON.parse(result)
-
-```
-
-```python
-import requests
-headers = {
-  'Content-Type': 'application/json',
-  'Accept': 'application/json'
-}
-
-r = requests.post('https://api.fitit.tk/api/v1/auth/register', headers = headers)
-
-print(r.json())
-
-```
-
-```php
-<?php
-
-require 'vendor/autoload.php';
-
-$headers = array(
-    'Content-Type' => 'application/json',
-    'Accept' => 'application/json',
-);
-
-$client = new \GuzzleHttp\Client();
-
-// Define array of request body.
-$request_body = array();
-
-try {
-    $response = $client->request('POST','https://api.fitit.tk/api/v1/auth/register', array(
-        'headers' => $headers,
-        'json' => $request_body,
-       )
-    );
-    print_r($response->getBody()->getContents());
- }
- catch (\GuzzleHttp\Exception\BadResponseException $e) {
-    // handle exception or api errors.
-    print_r($e->getMessage());
- }
-
- // ...
-
-```
-
-```java
-URL obj = new URL("https://api.fitit.tk/api/v1/auth/register");
-HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-con.setRequestMethod("POST");
-int responseCode = con.getResponseCode();
-BufferedReader in = new BufferedReader(
-    new InputStreamReader(con.getInputStream()));
-String inputLine;
-StringBuffer response = new StringBuffer();
-while ((inputLine = in.readLine()) != null) {
-    response.append(inputLine);
-}
-in.close();
-System.out.println(response.toString());
-
-```
-
-```go
-package main
-
-import (
-       "bytes"
-       "net/http"
-)
-
-func main() {
-
-    headers := map[string][]string{
-        "Content-Type": []string{"application/json"},
-        "Accept": []string{"application/json"},
-    }
-
-    data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("POST", "https://api.fitit.tk/api/v1/auth/register", data)
-    req.Header = headers
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    // ...
-}
-
-```
-
 `POST /auth/register`
 
 *Register a user*
@@ -466,15 +271,72 @@ func main() {
 
 ```json
 {
-  "email": "email@example.com",
-  "password": "qwerty2137",
-  "name": "James",
-  "surname": "Smith",
-  "classId": "dzikie-węże",
-  "birthDate": "2001-01-04T23:00:00.000Z",
-  "height": 180,
-  "weight": 60,
-  "isTeacher": false
+  "allOf": [
+    {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "User's email",
+          "example": "email@example.com"
+        },
+        "password": {
+          "type": "string",
+          "description": "User's password",
+          "example": "qwerty2137"
+        }
+      },
+      "required": [
+        "email",
+        "password"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "User's name",
+          "example": "James"
+        },
+        "surname": {
+          "type": "string",
+          "description": "User's surname",
+          "example": "Smith"
+        },
+        "classId": {
+          "type": "string",
+          "description": "Unique human-readable identifier of a class",
+          "example": "dzikie-węże"
+        },
+        "birthDate": {
+          "type": "string",
+          "description": "User's birth date",
+          "example": "2001-01-04T23:00:00.000Z"
+        },
+        "height": {
+          "type": "number",
+          "description": "User's height",
+          "example": 180
+        },
+        "weight": {
+          "type": "number",
+          "description": "User's weight",
+          "example": 60
+        },
+        "isTeacher": {
+          "type": "boolean",
+          "description": "Is user a teacher",
+          "example": false
+        }
+      },
+      "required": [
+        "name",
+        "surname",
+        "classId"
+      ]
+    }
+  ]
 }
 ```
 
@@ -490,22 +352,105 @@ func main() {
 
 ```json
 {
-  "class_ids": [
-    "601bd55f22c26a2ef9298df3"
-  ],
-  "_id": "601be28e50364b654dec42cf",
-  "isActive": true,
-  "isTeacher": false,
-  "name": "James",
-  "surname": "Smith",
-  "activityLog_ids": [
-    "601bef6a25c8480b19dd54cd"
-  ],
-  "email": "email@example.com",
-  "birthDate": "2001-01-04T23:00:00.000Z",
-  "dateCreated": "2021-02-04T12:03:26.000Z",
-  "height": 182,
-  "weight": 60
+  "allOf": [
+    {
+      "allOf": [
+        {
+          "type": "object",
+          "properties": {
+            "class_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "IDs of classes the user belongs to",
+                "example": "601bd55f22c26a2ef9298df3"
+              }
+            },
+            "_id": {
+              "type": "string",
+              "description": "User's ID",
+              "example": "601be28e50364b654dec42cf"
+            },
+            "isActive": {
+              "type": "boolean",
+              "description": "Was the user's account active",
+              "example": true
+            },
+            "isTeacher": {
+              "type": "boolean",
+              "description": "Is the user a teacher",
+              "example": false
+            },
+            "name": {
+              "type": "string",
+              "description": "User's name",
+              "example": "James"
+            },
+            "surname": {
+              "type": "string",
+              "description": "User's surname",
+              "example": "Smith"
+            }
+          },
+          "required": [
+            "class_ids",
+            "_id",
+            "isActive",
+            "isTeacher",
+            "name",
+            "surname"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "activityLog_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "IDs of activities the user performed",
+                "example": "601bef6a25c8480b19dd54cd"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "User's email address",
+          "example": "email@example.com"
+        },
+        "birthDate": {
+          "type": "string",
+          "description": "User's date of birth",
+          "example": "2001-01-04T23:00:00.000Z"
+        },
+        "dateCreated": {
+          "type": "string",
+          "description": "The date of account's creation",
+          "example": "2021-02-04T12:03:26.000Z"
+        },
+        "height": {
+          "type": "number",
+          "description": "User's height",
+          "example": 182
+        },
+        "weight": {
+          "type": "number",
+          "description": "User's weight",
+          "example": 60
+        }
+      },
+      "required": [
+        "email",
+        "dateCreated"
+      ]
+    }
+  ]
 }
 ```
 
@@ -529,149 +474,6 @@ Access to user information
 
 ## get__user
 
-> Code samples
-
-```shell
-# You can also use wget
-curl -X GET https://api.fitit.tk/api/v1/user \
-  -H 'Accept: application/json' \
-  -H 'Authorization: Bearer {access-token}'
-
-```
-
-```http
-GET https://api.fitit.tk/api/v1/user HTTP/1.1
-Host: api.fitit.tk
-Accept: application/json
-
-```
-
-```javascript
-
-const headers = {
-  'Accept':'application/json',
-  'Authorization':'Bearer {access-token}'
-};
-
-fetch('https://api.fitit.tk/api/v1/user',
-{
-  method: 'GET',
-
-  headers: headers
-})
-.then(function(res) {
-    return res.json();
-}).then(function(body) {
-    console.log(body);
-});
-
-```
-
-```ruby
-require 'rest-client'
-require 'json'
-
-headers = {
-  'Accept' => 'application/json',
-  'Authorization' => 'Bearer {access-token}'
-}
-
-result = RestClient.get 'https://api.fitit.tk/api/v1/user',
-  params: {
-  }, headers: headers
-
-p JSON.parse(result)
-
-```
-
-```python
-import requests
-headers = {
-  'Accept': 'application/json',
-  'Authorization': 'Bearer {access-token}'
-}
-
-r = requests.get('https://api.fitit.tk/api/v1/user', headers = headers)
-
-print(r.json())
-
-```
-
-```php
-<?php
-
-require 'vendor/autoload.php';
-
-$headers = array(
-    'Accept' => 'application/json',
-    'Authorization' => 'Bearer {access-token}',
-);
-
-$client = new \GuzzleHttp\Client();
-
-// Define array of request body.
-$request_body = array();
-
-try {
-    $response = $client->request('GET','https://api.fitit.tk/api/v1/user', array(
-        'headers' => $headers,
-        'json' => $request_body,
-       )
-    );
-    print_r($response->getBody()->getContents());
- }
- catch (\GuzzleHttp\Exception\BadResponseException $e) {
-    // handle exception or api errors.
-    print_r($e->getMessage());
- }
-
- // ...
-
-```
-
-```java
-URL obj = new URL("https://api.fitit.tk/api/v1/user");
-HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-con.setRequestMethod("GET");
-int responseCode = con.getResponseCode();
-BufferedReader in = new BufferedReader(
-    new InputStreamReader(con.getInputStream()));
-String inputLine;
-StringBuffer response = new StringBuffer();
-while ((inputLine = in.readLine()) != null) {
-    response.append(inputLine);
-}
-in.close();
-System.out.println(response.toString());
-
-```
-
-```go
-package main
-
-import (
-       "bytes"
-       "net/http"
-)
-
-func main() {
-
-    headers := map[string][]string{
-        "Accept": []string{"application/json"},
-        "Authorization": []string{"Bearer {access-token}"},
-    }
-
-    data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("GET", "https://api.fitit.tk/api/v1/user", data)
-    req.Header = headers
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    // ...
-}
-
-```
-
 `GET /user`
 
 *Get current user's information*
@@ -682,22 +484,105 @@ func main() {
 
 ```json
 {
-  "class_ids": [
-    "601bd55f22c26a2ef9298df3"
-  ],
-  "_id": "601be28e50364b654dec42cf",
-  "isActive": true,
-  "isTeacher": false,
-  "name": "James",
-  "surname": "Smith",
-  "activityLog_ids": [
-    "601bef6a25c8480b19dd54cd"
-  ],
-  "email": "email@example.com",
-  "birthDate": "2001-01-04T23:00:00.000Z",
-  "dateCreated": "2021-02-04T12:03:26.000Z",
-  "height": 182,
-  "weight": 60
+  "allOf": [
+    {
+      "allOf": [
+        {
+          "type": "object",
+          "properties": {
+            "class_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "IDs of classes the user belongs to",
+                "example": "601bd55f22c26a2ef9298df3"
+              }
+            },
+            "_id": {
+              "type": "string",
+              "description": "User's ID",
+              "example": "601be28e50364b654dec42cf"
+            },
+            "isActive": {
+              "type": "boolean",
+              "description": "Was the user's account active",
+              "example": true
+            },
+            "isTeacher": {
+              "type": "boolean",
+              "description": "Is the user a teacher",
+              "example": false
+            },
+            "name": {
+              "type": "string",
+              "description": "User's name",
+              "example": "James"
+            },
+            "surname": {
+              "type": "string",
+              "description": "User's surname",
+              "example": "Smith"
+            }
+          },
+          "required": [
+            "class_ids",
+            "_id",
+            "isActive",
+            "isTeacher",
+            "name",
+            "surname"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "activityLog_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "IDs of activities the user performed",
+                "example": "601bef6a25c8480b19dd54cd"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "User's email address",
+          "example": "email@example.com"
+        },
+        "birthDate": {
+          "type": "string",
+          "description": "User's date of birth",
+          "example": "2001-01-04T23:00:00.000Z"
+        },
+        "dateCreated": {
+          "type": "string",
+          "description": "The date of account's creation",
+          "example": "2021-02-04T12:03:26.000Z"
+        },
+        "height": {
+          "type": "number",
+          "description": "User's height",
+          "example": 182
+        },
+        "weight": {
+          "type": "number",
+          "description": "User's weight",
+          "example": 60
+        }
+      },
+      "required": [
+        "email",
+        "dateCreated"
+      ]
+    }
+  ]
 }
 ```
 
@@ -718,166 +603,6 @@ bearerAuth, tokenInQuery, tokenInCookie
 
 ## patch__user
 
-> Code samples
-
-```shell
-# You can also use wget
-curl -X PATCH https://api.fitit.tk/api/v1/user \
-  -H 'Content-Type: application/json' \
-  -H 'Accept: application/json' \
-  -H 'Authorization: Bearer {access-token}'
-
-```
-
-```http
-PATCH https://api.fitit.tk/api/v1/user HTTP/1.1
-Host: api.fitit.tk
-Content-Type: application/json
-Accept: application/json
-
-```
-
-```javascript
-const inputBody = '{
-  "email": "email@example.com",
-  "password": "qwerty2137",
-  "name": "James",
-  "surname": "Smith",
-  "classId": "dzikie-węże",
-  "birthDate": "2001-01-04T23:00:00.000Z",
-  "height": 180,
-  "weight": 60,
-  "isTeacher": false
-}';
-const headers = {
-  'Content-Type':'application/json',
-  'Accept':'application/json',
-  'Authorization':'Bearer {access-token}'
-};
-
-fetch('https://api.fitit.tk/api/v1/user',
-{
-  method: 'PATCH',
-  body: inputBody,
-  headers: headers
-})
-.then(function(res) {
-    return res.json();
-}).then(function(body) {
-    console.log(body);
-});
-
-```
-
-```ruby
-require 'rest-client'
-require 'json'
-
-headers = {
-  'Content-Type' => 'application/json',
-  'Accept' => 'application/json',
-  'Authorization' => 'Bearer {access-token}'
-}
-
-result = RestClient.patch 'https://api.fitit.tk/api/v1/user',
-  params: {
-  }, headers: headers
-
-p JSON.parse(result)
-
-```
-
-```python
-import requests
-headers = {
-  'Content-Type': 'application/json',
-  'Accept': 'application/json',
-  'Authorization': 'Bearer {access-token}'
-}
-
-r = requests.patch('https://api.fitit.tk/api/v1/user', headers = headers)
-
-print(r.json())
-
-```
-
-```php
-<?php
-
-require 'vendor/autoload.php';
-
-$headers = array(
-    'Content-Type' => 'application/json',
-    'Accept' => 'application/json',
-    'Authorization' => 'Bearer {access-token}',
-);
-
-$client = new \GuzzleHttp\Client();
-
-// Define array of request body.
-$request_body = array();
-
-try {
-    $response = $client->request('PATCH','https://api.fitit.tk/api/v1/user', array(
-        'headers' => $headers,
-        'json' => $request_body,
-       )
-    );
-    print_r($response->getBody()->getContents());
- }
- catch (\GuzzleHttp\Exception\BadResponseException $e) {
-    // handle exception or api errors.
-    print_r($e->getMessage());
- }
-
- // ...
-
-```
-
-```java
-URL obj = new URL("https://api.fitit.tk/api/v1/user");
-HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-con.setRequestMethod("PATCH");
-int responseCode = con.getResponseCode();
-BufferedReader in = new BufferedReader(
-    new InputStreamReader(con.getInputStream()));
-String inputLine;
-StringBuffer response = new StringBuffer();
-while ((inputLine = in.readLine()) != null) {
-    response.append(inputLine);
-}
-in.close();
-System.out.println(response.toString());
-
-```
-
-```go
-package main
-
-import (
-       "bytes"
-       "net/http"
-)
-
-func main() {
-
-    headers := map[string][]string{
-        "Content-Type": []string{"application/json"},
-        "Accept": []string{"application/json"},
-        "Authorization": []string{"Bearer {access-token}"},
-    }
-
-    data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("PATCH", "https://api.fitit.tk/api/v1/user", data)
-    req.Header = headers
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    // ...
-}
-
-```
-
 `PATCH /user`
 
 *Update user's current information*
@@ -886,15 +611,72 @@ func main() {
 
 ```json
 {
-  "email": "email@example.com",
-  "password": "qwerty2137",
-  "name": "James",
-  "surname": "Smith",
-  "classId": "dzikie-węże",
-  "birthDate": "2001-01-04T23:00:00.000Z",
-  "height": 180,
-  "weight": 60,
-  "isTeacher": false
+  "allOf": [
+    {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "User's email",
+          "example": "email@example.com"
+        },
+        "password": {
+          "type": "string",
+          "description": "User's password",
+          "example": "qwerty2137"
+        }
+      },
+      "required": [
+        "email",
+        "password"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "User's name",
+          "example": "James"
+        },
+        "surname": {
+          "type": "string",
+          "description": "User's surname",
+          "example": "Smith"
+        },
+        "classId": {
+          "type": "string",
+          "description": "Unique human-readable identifier of a class",
+          "example": "dzikie-węże"
+        },
+        "birthDate": {
+          "type": "string",
+          "description": "User's birth date",
+          "example": "2001-01-04T23:00:00.000Z"
+        },
+        "height": {
+          "type": "number",
+          "description": "User's height",
+          "example": 180
+        },
+        "weight": {
+          "type": "number",
+          "description": "User's weight",
+          "example": 60
+        },
+        "isTeacher": {
+          "type": "boolean",
+          "description": "Is user a teacher",
+          "example": false
+        }
+      },
+      "required": [
+        "name",
+        "surname",
+        "classId"
+      ]
+    }
+  ]
 }
 ```
 
@@ -910,22 +692,105 @@ func main() {
 
 ```json
 {
-  "class_ids": [
-    "601bd55f22c26a2ef9298df3"
-  ],
-  "_id": "601be28e50364b654dec42cf",
-  "isActive": true,
-  "isTeacher": false,
-  "name": "James",
-  "surname": "Smith",
-  "activityLog_ids": [
-    "601bef6a25c8480b19dd54cd"
-  ],
-  "email": "email@example.com",
-  "birthDate": "2001-01-04T23:00:00.000Z",
-  "dateCreated": "2021-02-04T12:03:26.000Z",
-  "height": 182,
-  "weight": 60
+  "allOf": [
+    {
+      "allOf": [
+        {
+          "type": "object",
+          "properties": {
+            "class_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "IDs of classes the user belongs to",
+                "example": "601bd55f22c26a2ef9298df3"
+              }
+            },
+            "_id": {
+              "type": "string",
+              "description": "User's ID",
+              "example": "601be28e50364b654dec42cf"
+            },
+            "isActive": {
+              "type": "boolean",
+              "description": "Was the user's account active",
+              "example": true
+            },
+            "isTeacher": {
+              "type": "boolean",
+              "description": "Is the user a teacher",
+              "example": false
+            },
+            "name": {
+              "type": "string",
+              "description": "User's name",
+              "example": "James"
+            },
+            "surname": {
+              "type": "string",
+              "description": "User's surname",
+              "example": "Smith"
+            }
+          },
+          "required": [
+            "class_ids",
+            "_id",
+            "isActive",
+            "isTeacher",
+            "name",
+            "surname"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "activityLog_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "IDs of activities the user performed",
+                "example": "601bef6a25c8480b19dd54cd"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "User's email address",
+          "example": "email@example.com"
+        },
+        "birthDate": {
+          "type": "string",
+          "description": "User's date of birth",
+          "example": "2001-01-04T23:00:00.000Z"
+        },
+        "dateCreated": {
+          "type": "string",
+          "description": "The date of account's creation",
+          "example": "2021-02-04T12:03:26.000Z"
+        },
+        "height": {
+          "type": "number",
+          "description": "User's height",
+          "example": 182
+        },
+        "weight": {
+          "type": "number",
+          "description": "User's weight",
+          "example": 60
+        }
+      },
+      "required": [
+        "email",
+        "dateCreated"
+      ]
+    }
+  ]
 }
 ```
 
@@ -947,149 +812,6 @@ bearerAuth, tokenInQuery, tokenInCookie
 
 ## delete__user
 
-> Code samples
-
-```shell
-# You can also use wget
-curl -X DELETE https://api.fitit.tk/api/v1/user \
-  -H 'Accept: application/json' \
-  -H 'Authorization: Bearer {access-token}'
-
-```
-
-```http
-DELETE https://api.fitit.tk/api/v1/user HTTP/1.1
-Host: api.fitit.tk
-Accept: application/json
-
-```
-
-```javascript
-
-const headers = {
-  'Accept':'application/json',
-  'Authorization':'Bearer {access-token}'
-};
-
-fetch('https://api.fitit.tk/api/v1/user',
-{
-  method: 'DELETE',
-
-  headers: headers
-})
-.then(function(res) {
-    return res.json();
-}).then(function(body) {
-    console.log(body);
-});
-
-```
-
-```ruby
-require 'rest-client'
-require 'json'
-
-headers = {
-  'Accept' => 'application/json',
-  'Authorization' => 'Bearer {access-token}'
-}
-
-result = RestClient.delete 'https://api.fitit.tk/api/v1/user',
-  params: {
-  }, headers: headers
-
-p JSON.parse(result)
-
-```
-
-```python
-import requests
-headers = {
-  'Accept': 'application/json',
-  'Authorization': 'Bearer {access-token}'
-}
-
-r = requests.delete('https://api.fitit.tk/api/v1/user', headers = headers)
-
-print(r.json())
-
-```
-
-```php
-<?php
-
-require 'vendor/autoload.php';
-
-$headers = array(
-    'Accept' => 'application/json',
-    'Authorization' => 'Bearer {access-token}',
-);
-
-$client = new \GuzzleHttp\Client();
-
-// Define array of request body.
-$request_body = array();
-
-try {
-    $response = $client->request('DELETE','https://api.fitit.tk/api/v1/user', array(
-        'headers' => $headers,
-        'json' => $request_body,
-       )
-    );
-    print_r($response->getBody()->getContents());
- }
- catch (\GuzzleHttp\Exception\BadResponseException $e) {
-    // handle exception or api errors.
-    print_r($e->getMessage());
- }
-
- // ...
-
-```
-
-```java
-URL obj = new URL("https://api.fitit.tk/api/v1/user");
-HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-con.setRequestMethod("DELETE");
-int responseCode = con.getResponseCode();
-BufferedReader in = new BufferedReader(
-    new InputStreamReader(con.getInputStream()));
-String inputLine;
-StringBuffer response = new StringBuffer();
-while ((inputLine = in.readLine()) != null) {
-    response.append(inputLine);
-}
-in.close();
-System.out.println(response.toString());
-
-```
-
-```go
-package main
-
-import (
-       "bytes"
-       "net/http"
-)
-
-func main() {
-
-    headers := map[string][]string{
-        "Accept": []string{"application/json"},
-        "Authorization": []string{"Bearer {access-token}"},
-    }
-
-    data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("DELETE", "https://api.fitit.tk/api/v1/user", data)
-    req.Header = headers
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    // ...
-}
-
-```
-
 `DELETE /user`
 
 *Delete user's account*
@@ -1099,7 +821,58 @@ func main() {
 > 401 Response
 
 ```json
-null
+{
+  "oneOf": [
+    {
+      "description": "Wrong authentication token",
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "number",
+                "description": "HTTP status"
+              },
+              "message": {
+                "type": "string",
+                "description": "Exception message"
+              }
+            },
+            "required": [
+              "status",
+              "message"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "description": "Authentication token missing",
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "number",
+                "description": "HTTP status"
+              },
+              "message": {
+                "type": "string",
+                "description": "Exception message"
+              }
+            },
+            "required": [
+              "status",
+              "message"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
 ```
 
 <h3 id="delete__user-responses">Responses</h3>
@@ -1119,149 +892,6 @@ bearerAuth, tokenInQuery, tokenInCookie
 
 ## get__user_{userId}
 
-> Code samples
-
-```shell
-# You can also use wget
-curl -X GET https://api.fitit.tk/api/v1/user/{userId} \
-  -H 'Accept: application/json' \
-  -H 'Authorization: Bearer {access-token}'
-
-```
-
-```http
-GET https://api.fitit.tk/api/v1/user/{userId} HTTP/1.1
-Host: api.fitit.tk
-Accept: application/json
-
-```
-
-```javascript
-
-const headers = {
-  'Accept':'application/json',
-  'Authorization':'Bearer {access-token}'
-};
-
-fetch('https://api.fitit.tk/api/v1/user/{userId}',
-{
-  method: 'GET',
-
-  headers: headers
-})
-.then(function(res) {
-    return res.json();
-}).then(function(body) {
-    console.log(body);
-});
-
-```
-
-```ruby
-require 'rest-client'
-require 'json'
-
-headers = {
-  'Accept' => 'application/json',
-  'Authorization' => 'Bearer {access-token}'
-}
-
-result = RestClient.get 'https://api.fitit.tk/api/v1/user/{userId}',
-  params: {
-  }, headers: headers
-
-p JSON.parse(result)
-
-```
-
-```python
-import requests
-headers = {
-  'Accept': 'application/json',
-  'Authorization': 'Bearer {access-token}'
-}
-
-r = requests.get('https://api.fitit.tk/api/v1/user/{userId}', headers = headers)
-
-print(r.json())
-
-```
-
-```php
-<?php
-
-require 'vendor/autoload.php';
-
-$headers = array(
-    'Accept' => 'application/json',
-    'Authorization' => 'Bearer {access-token}',
-);
-
-$client = new \GuzzleHttp\Client();
-
-// Define array of request body.
-$request_body = array();
-
-try {
-    $response = $client->request('GET','https://api.fitit.tk/api/v1/user/{userId}', array(
-        'headers' => $headers,
-        'json' => $request_body,
-       )
-    );
-    print_r($response->getBody()->getContents());
- }
- catch (\GuzzleHttp\Exception\BadResponseException $e) {
-    // handle exception or api errors.
-    print_r($e->getMessage());
- }
-
- // ...
-
-```
-
-```java
-URL obj = new URL("https://api.fitit.tk/api/v1/user/{userId}");
-HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-con.setRequestMethod("GET");
-int responseCode = con.getResponseCode();
-BufferedReader in = new BufferedReader(
-    new InputStreamReader(con.getInputStream()));
-String inputLine;
-StringBuffer response = new StringBuffer();
-while ((inputLine = in.readLine()) != null) {
-    response.append(inputLine);
-}
-in.close();
-System.out.println(response.toString());
-
-```
-
-```go
-package main
-
-import (
-       "bytes"
-       "net/http"
-)
-
-func main() {
-
-    headers := map[string][]string{
-        "Accept": []string{"application/json"},
-        "Authorization": []string{"Bearer {access-token}"},
-    }
-
-    data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("GET", "https://api.fitit.tk/api/v1/user/{userId}", data)
-    req.Header = headers
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    // ...
-}
-
-```
-
 `GET /user/{userId}`
 
 *Get a user by ID*
@@ -1278,22 +908,218 @@ func main() {
 
 ```json
 {
-  "class_ids": [
-    "601bd55f22c26a2ef9298df3"
-  ],
-  "_id": "601be28e50364b654dec42cf",
-  "isActive": true,
-  "isTeacher": false,
-  "name": "James",
-  "surname": "Smith",
-  "activityLog_ids": [
-    "601bef6a25c8480b19dd54cd"
-  ],
-  "email": "email@example.com",
-  "birthDate": "2001-01-04T23:00:00.000Z",
-  "dateCreated": "2021-02-04T12:03:26.000Z",
-  "height": 182,
-  "weight": 60
+  "oneOf": [
+    {
+      "allOf": [
+        {
+          "allOf": [
+            {
+              "type": "object",
+              "properties": {
+                "class_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "description": "IDs of classes the user belongs to",
+                    "example": "601bd55f22c26a2ef9298df3"
+                  }
+                },
+                "_id": {
+                  "type": "string",
+                  "description": "User's ID",
+                  "example": "601be28e50364b654dec42cf"
+                },
+                "isActive": {
+                  "type": "boolean",
+                  "description": "Was the user's account active",
+                  "example": true
+                },
+                "isTeacher": {
+                  "type": "boolean",
+                  "description": "Is the user a teacher",
+                  "example": false
+                },
+                "name": {
+                  "type": "string",
+                  "description": "User's name",
+                  "example": "James"
+                },
+                "surname": {
+                  "type": "string",
+                  "description": "User's surname",
+                  "example": "Smith"
+                }
+              },
+              "required": [
+                "class_ids",
+                "_id",
+                "isActive",
+                "isTeacher",
+                "name",
+                "surname"
+              ]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "activityLog_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "description": "IDs of activities the user performed",
+                    "example": "601bef6a25c8480b19dd54cd"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "email": {
+              "type": "string",
+              "description": "User's email address",
+              "example": "email@example.com"
+            },
+            "birthDate": {
+              "type": "string",
+              "description": "User's date of birth",
+              "example": "2001-01-04T23:00:00.000Z"
+            },
+            "dateCreated": {
+              "type": "string",
+              "description": "The date of account's creation",
+              "example": "2021-02-04T12:03:26.000Z"
+            },
+            "height": {
+              "type": "number",
+              "description": "User's height",
+              "example": 182
+            },
+            "weight": {
+              "type": "number",
+              "description": "User's weight",
+              "example": 60
+            }
+          },
+          "required": [
+            "email",
+            "dateCreated"
+          ]
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "type": "object",
+          "properties": {
+            "class_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "IDs of classes the user belongs to",
+                "example": "601bd55f22c26a2ef9298df3"
+              }
+            },
+            "_id": {
+              "type": "string",
+              "description": "User's ID",
+              "example": "601be28e50364b654dec42cf"
+            },
+            "isActive": {
+              "type": "boolean",
+              "description": "Was the user's account active",
+              "example": true
+            },
+            "isTeacher": {
+              "type": "boolean",
+              "description": "Is the user a teacher",
+              "example": false
+            },
+            "name": {
+              "type": "string",
+              "description": "User's name",
+              "example": "James"
+            },
+            "surname": {
+              "type": "string",
+              "description": "User's surname",
+              "example": "Smith"
+            }
+          },
+          "required": [
+            "class_ids",
+            "_id",
+            "isActive",
+            "isTeacher",
+            "name",
+            "surname"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "activityLog_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "IDs of activities the user performed",
+                "example": "601bef6a25c8480b19dd54cd"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "class_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "IDs of classes the user belongs to",
+            "example": "601bd55f22c26a2ef9298df3"
+          }
+        },
+        "_id": {
+          "type": "string",
+          "description": "User's ID",
+          "example": "601be28e50364b654dec42cf"
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Was the user's account active",
+          "example": true
+        },
+        "isTeacher": {
+          "type": "boolean",
+          "description": "Is the user a teacher",
+          "example": false
+        },
+        "name": {
+          "type": "string",
+          "description": "User's name",
+          "example": "James"
+        },
+        "surname": {
+          "type": "string",
+          "description": "User's surname",
+          "example": "Smith"
+        }
+      },
+      "required": [
+        "class_ids",
+        "_id",
+        "isActive",
+        "isTeacher",
+        "name",
+        "surname"
+      ]
+    }
+  ]
 }
 ```
 
@@ -1320,149 +1146,6 @@ Access to classes information
 
 ## get__classes
 
-> Code samples
-
-```shell
-# You can also use wget
-curl -X GET https://api.fitit.tk/api/v1/classes \
-  -H 'Accept: application/json' \
-  -H 'Authorization: Bearer {access-token}'
-
-```
-
-```http
-GET https://api.fitit.tk/api/v1/classes HTTP/1.1
-Host: api.fitit.tk
-Accept: application/json
-
-```
-
-```javascript
-
-const headers = {
-  'Accept':'application/json',
-  'Authorization':'Bearer {access-token}'
-};
-
-fetch('https://api.fitit.tk/api/v1/classes',
-{
-  method: 'GET',
-
-  headers: headers
-})
-.then(function(res) {
-    return res.json();
-}).then(function(body) {
-    console.log(body);
-});
-
-```
-
-```ruby
-require 'rest-client'
-require 'json'
-
-headers = {
-  'Accept' => 'application/json',
-  'Authorization' => 'Bearer {access-token}'
-}
-
-result = RestClient.get 'https://api.fitit.tk/api/v1/classes',
-  params: {
-  }, headers: headers
-
-p JSON.parse(result)
-
-```
-
-```python
-import requests
-headers = {
-  'Accept': 'application/json',
-  'Authorization': 'Bearer {access-token}'
-}
-
-r = requests.get('https://api.fitit.tk/api/v1/classes', headers = headers)
-
-print(r.json())
-
-```
-
-```php
-<?php
-
-require 'vendor/autoload.php';
-
-$headers = array(
-    'Accept' => 'application/json',
-    'Authorization' => 'Bearer {access-token}',
-);
-
-$client = new \GuzzleHttp\Client();
-
-// Define array of request body.
-$request_body = array();
-
-try {
-    $response = $client->request('GET','https://api.fitit.tk/api/v1/classes', array(
-        'headers' => $headers,
-        'json' => $request_body,
-       )
-    );
-    print_r($response->getBody()->getContents());
- }
- catch (\GuzzleHttp\Exception\BadResponseException $e) {
-    // handle exception or api errors.
-    print_r($e->getMessage());
- }
-
- // ...
-
-```
-
-```java
-URL obj = new URL("https://api.fitit.tk/api/v1/classes");
-HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-con.setRequestMethod("GET");
-int responseCode = con.getResponseCode();
-BufferedReader in = new BufferedReader(
-    new InputStreamReader(con.getInputStream()));
-String inputLine;
-StringBuffer response = new StringBuffer();
-while ((inputLine = in.readLine()) != null) {
-    response.append(inputLine);
-}
-in.close();
-System.out.println(response.toString());
-
-```
-
-```go
-package main
-
-import (
-       "bytes"
-       "net/http"
-)
-
-func main() {
-
-    headers := map[string][]string{
-        "Accept": []string{"application/json"},
-        "Authorization": []string{"Bearer {access-token}"},
-    }
-
-    data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("GET", "https://api.fitit.tk/api/v1/classes", data)
-    req.Header = headers
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    // ...
-}
-
-```
-
 `GET /classes`
 
 *Get all classes*
@@ -1472,13 +1155,29 @@ func main() {
 > 200 Response
 
 ```json
-[
-  {
-    "_id": "601bd55f22c26a2ef9298df3",
-    "name": "4TB",
-    "isActive": true
+{
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "_id": {
+        "type": "string",
+        "description": "Id of the class",
+        "example": "601bd55f22c26a2ef9298df3"
+      },
+      "name": {
+        "type": "string",
+        "description": "Name of the class",
+        "example": "4TB"
+      },
+      "isActive": {
+        "type": "boolean",
+        "description": "Is the class active",
+        "example": true
+      }
+    }
   }
-]
+}
 ```
 
 <h3 id="get__classes-responses">Responses</h3>
@@ -1507,149 +1206,6 @@ bearerAuth, tokenInQuery, tokenInCookie
 
 ## get__classess_{classId}
 
-> Code samples
-
-```shell
-# You can also use wget
-curl -X GET https://api.fitit.tk/api/v1/classess/{classId} \
-  -H 'Accept: application/json' \
-  -H 'Authorization: Bearer {access-token}'
-
-```
-
-```http
-GET https://api.fitit.tk/api/v1/classess/{classId} HTTP/1.1
-Host: api.fitit.tk
-Accept: application/json
-
-```
-
-```javascript
-
-const headers = {
-  'Accept':'application/json',
-  'Authorization':'Bearer {access-token}'
-};
-
-fetch('https://api.fitit.tk/api/v1/classess/{classId}',
-{
-  method: 'GET',
-
-  headers: headers
-})
-.then(function(res) {
-    return res.json();
-}).then(function(body) {
-    console.log(body);
-});
-
-```
-
-```ruby
-require 'rest-client'
-require 'json'
-
-headers = {
-  'Accept' => 'application/json',
-  'Authorization' => 'Bearer {access-token}'
-}
-
-result = RestClient.get 'https://api.fitit.tk/api/v1/classess/{classId}',
-  params: {
-  }, headers: headers
-
-p JSON.parse(result)
-
-```
-
-```python
-import requests
-headers = {
-  'Accept': 'application/json',
-  'Authorization': 'Bearer {access-token}'
-}
-
-r = requests.get('https://api.fitit.tk/api/v1/classess/{classId}', headers = headers)
-
-print(r.json())
-
-```
-
-```php
-<?php
-
-require 'vendor/autoload.php';
-
-$headers = array(
-    'Accept' => 'application/json',
-    'Authorization' => 'Bearer {access-token}',
-);
-
-$client = new \GuzzleHttp\Client();
-
-// Define array of request body.
-$request_body = array();
-
-try {
-    $response = $client->request('GET','https://api.fitit.tk/api/v1/classess/{classId}', array(
-        'headers' => $headers,
-        'json' => $request_body,
-       )
-    );
-    print_r($response->getBody()->getContents());
- }
- catch (\GuzzleHttp\Exception\BadResponseException $e) {
-    // handle exception or api errors.
-    print_r($e->getMessage());
- }
-
- // ...
-
-```
-
-```java
-URL obj = new URL("https://api.fitit.tk/api/v1/classess/{classId}");
-HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-con.setRequestMethod("GET");
-int responseCode = con.getResponseCode();
-BufferedReader in = new BufferedReader(
-    new InputStreamReader(con.getInputStream()));
-String inputLine;
-StringBuffer response = new StringBuffer();
-while ((inputLine = in.readLine()) != null) {
-    response.append(inputLine);
-}
-in.close();
-System.out.println(response.toString());
-
-```
-
-```go
-package main
-
-import (
-       "bytes"
-       "net/http"
-)
-
-func main() {
-
-    headers := map[string][]string{
-        "Accept": []string{"application/json"},
-        "Authorization": []string{"Bearer {access-token}"},
-    }
-
-    data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("GET", "https://api.fitit.tk/api/v1/classess/{classId}", data)
-    req.Header = headers
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    // ...
-}
-
-```
-
 `GET /classess/{classId}`
 
 *Get a class by ID*
@@ -1666,9 +1222,24 @@ func main() {
 
 ```json
 {
-  "_id": "601bd55f22c26a2ef9298df3",
-  "name": "4TB",
-  "isActive": true
+  "type": "object",
+  "properties": {
+    "_id": {
+      "type": "string",
+      "description": "Id of the class",
+      "example": "601bd55f22c26a2ef9298df3"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name of the class",
+      "example": "4TB"
+    },
+    "isActive": {
+      "type": "boolean",
+      "description": "Is the class active",
+      "example": true
+    }
+  }
 }
 ```
 
@@ -1690,149 +1261,6 @@ bearerAuth, tokenInQuery, tokenInCookie
 
 ## get__classes_{classId}_users
 
-> Code samples
-
-```shell
-# You can also use wget
-curl -X GET https://api.fitit.tk/api/v1/classes/{classId}/users \
-  -H 'Accept: application/json' \
-  -H 'Authorization: Bearer {access-token}'
-
-```
-
-```http
-GET https://api.fitit.tk/api/v1/classes/{classId}/users HTTP/1.1
-Host: api.fitit.tk
-Accept: application/json
-
-```
-
-```javascript
-
-const headers = {
-  'Accept':'application/json',
-  'Authorization':'Bearer {access-token}'
-};
-
-fetch('https://api.fitit.tk/api/v1/classes/{classId}/users',
-{
-  method: 'GET',
-
-  headers: headers
-})
-.then(function(res) {
-    return res.json();
-}).then(function(body) {
-    console.log(body);
-});
-
-```
-
-```ruby
-require 'rest-client'
-require 'json'
-
-headers = {
-  'Accept' => 'application/json',
-  'Authorization' => 'Bearer {access-token}'
-}
-
-result = RestClient.get 'https://api.fitit.tk/api/v1/classes/{classId}/users',
-  params: {
-  }, headers: headers
-
-p JSON.parse(result)
-
-```
-
-```python
-import requests
-headers = {
-  'Accept': 'application/json',
-  'Authorization': 'Bearer {access-token}'
-}
-
-r = requests.get('https://api.fitit.tk/api/v1/classes/{classId}/users', headers = headers)
-
-print(r.json())
-
-```
-
-```php
-<?php
-
-require 'vendor/autoload.php';
-
-$headers = array(
-    'Accept' => 'application/json',
-    'Authorization' => 'Bearer {access-token}',
-);
-
-$client = new \GuzzleHttp\Client();
-
-// Define array of request body.
-$request_body = array();
-
-try {
-    $response = $client->request('GET','https://api.fitit.tk/api/v1/classes/{classId}/users', array(
-        'headers' => $headers,
-        'json' => $request_body,
-       )
-    );
-    print_r($response->getBody()->getContents());
- }
- catch (\GuzzleHttp\Exception\BadResponseException $e) {
-    // handle exception or api errors.
-    print_r($e->getMessage());
- }
-
- // ...
-
-```
-
-```java
-URL obj = new URL("https://api.fitit.tk/api/v1/classes/{classId}/users");
-HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-con.setRequestMethod("GET");
-int responseCode = con.getResponseCode();
-BufferedReader in = new BufferedReader(
-    new InputStreamReader(con.getInputStream()));
-String inputLine;
-StringBuffer response = new StringBuffer();
-while ((inputLine = in.readLine()) != null) {
-    response.append(inputLine);
-}
-in.close();
-System.out.println(response.toString());
-
-```
-
-```go
-package main
-
-import (
-       "bytes"
-       "net/http"
-)
-
-func main() {
-
-    headers := map[string][]string{
-        "Accept": []string{"application/json"},
-        "Authorization": []string{"Bearer {access-token}"},
-    }
-
-    data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("GET", "https://api.fitit.tk/api/v1/classes/{classId}/users", data)
-    req.Header = headers
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    // ...
-}
-
-```
-
 `GET /classes/{classId}/users`
 
 *Get users from a class*
@@ -1848,18 +1276,122 @@ func main() {
 > 200 Response
 
 ```json
-[
-  {
-    "class_ids": [
-      "601bd55f22c26a2ef9298df3"
-    ],
-    "_id": "601be28e50364b654dec42cf",
-    "isActive": true,
-    "isTeacher": false,
-    "name": "James",
-    "surname": "Smith"
+{
+  "type": "array",
+  "items": {
+    "anyOf": [
+      {
+        "type": "object",
+        "properties": {
+          "class_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "IDs of classes the user belongs to",
+              "example": "601bd55f22c26a2ef9298df3"
+            }
+          },
+          "_id": {
+            "type": "string",
+            "description": "User's ID",
+            "example": "601be28e50364b654dec42cf"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Was the user's account active",
+            "example": true
+          },
+          "isTeacher": {
+            "type": "boolean",
+            "description": "Is the user a teacher",
+            "example": false
+          },
+          "name": {
+            "type": "string",
+            "description": "User's name",
+            "example": "James"
+          },
+          "surname": {
+            "type": "string",
+            "description": "User's surname",
+            "example": "Smith"
+          }
+        },
+        "required": [
+          "class_ids",
+          "_id",
+          "isActive",
+          "isTeacher",
+          "name",
+          "surname"
+        ]
+      },
+      {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "class_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "IDs of classes the user belongs to",
+                  "example": "601bd55f22c26a2ef9298df3"
+                }
+              },
+              "_id": {
+                "type": "string",
+                "description": "User's ID",
+                "example": "601be28e50364b654dec42cf"
+              },
+              "isActive": {
+                "type": "boolean",
+                "description": "Was the user's account active",
+                "example": true
+              },
+              "isTeacher": {
+                "type": "boolean",
+                "description": "Is the user a teacher",
+                "example": false
+              },
+              "name": {
+                "type": "string",
+                "description": "User's name",
+                "example": "James"
+              },
+              "surname": {
+                "type": "string",
+                "description": "User's surname",
+                "example": "Smith"
+              }
+            },
+            "required": [
+              "class_ids",
+              "_id",
+              "isActive",
+              "isTeacher",
+              "name",
+              "surname"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "activityLog_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "IDs of activities the user performed",
+                  "example": "601bef6a25c8480b19dd54cd"
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
   }
-]
+}
 ```
 
 <h3 id="get__classes_{classid}_users-responses">Responses</h3>
@@ -1880,149 +1412,6 @@ bearerAuth, tokenInQuery, tokenInCookie
 </aside>
 
 ## get__classes_{classId}_code
-
-> Code samples
-
-```shell
-# You can also use wget
-curl -X GET https://api.fitit.tk/api/v1/classes/{classId}/code \
-  -H 'Accept: application/json' \
-  -H 'Authorization: Bearer {access-token}'
-
-```
-
-```http
-GET https://api.fitit.tk/api/v1/classes/{classId}/code HTTP/1.1
-Host: api.fitit.tk
-Accept: application/json
-
-```
-
-```javascript
-
-const headers = {
-  'Accept':'application/json',
-  'Authorization':'Bearer {access-token}'
-};
-
-fetch('https://api.fitit.tk/api/v1/classes/{classId}/code',
-{
-  method: 'GET',
-
-  headers: headers
-})
-.then(function(res) {
-    return res.json();
-}).then(function(body) {
-    console.log(body);
-});
-
-```
-
-```ruby
-require 'rest-client'
-require 'json'
-
-headers = {
-  'Accept' => 'application/json',
-  'Authorization' => 'Bearer {access-token}'
-}
-
-result = RestClient.get 'https://api.fitit.tk/api/v1/classes/{classId}/code',
-  params: {
-  }, headers: headers
-
-p JSON.parse(result)
-
-```
-
-```python
-import requests
-headers = {
-  'Accept': 'application/json',
-  'Authorization': 'Bearer {access-token}'
-}
-
-r = requests.get('https://api.fitit.tk/api/v1/classes/{classId}/code', headers = headers)
-
-print(r.json())
-
-```
-
-```php
-<?php
-
-require 'vendor/autoload.php';
-
-$headers = array(
-    'Accept' => 'application/json',
-    'Authorization' => 'Bearer {access-token}',
-);
-
-$client = new \GuzzleHttp\Client();
-
-// Define array of request body.
-$request_body = array();
-
-try {
-    $response = $client->request('GET','https://api.fitit.tk/api/v1/classes/{classId}/code', array(
-        'headers' => $headers,
-        'json' => $request_body,
-       )
-    );
-    print_r($response->getBody()->getContents());
- }
- catch (\GuzzleHttp\Exception\BadResponseException $e) {
-    // handle exception or api errors.
-    print_r($e->getMessage());
- }
-
- // ...
-
-```
-
-```java
-URL obj = new URL("https://api.fitit.tk/api/v1/classes/{classId}/code");
-HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-con.setRequestMethod("GET");
-int responseCode = con.getResponseCode();
-BufferedReader in = new BufferedReader(
-    new InputStreamReader(con.getInputStream()));
-String inputLine;
-StringBuffer response = new StringBuffer();
-while ((inputLine = in.readLine()) != null) {
-    response.append(inputLine);
-}
-in.close();
-System.out.println(response.toString());
-
-```
-
-```go
-package main
-
-import (
-       "bytes"
-       "net/http"
-)
-
-func main() {
-
-    headers := map[string][]string{
-        "Accept": []string{"application/json"},
-        "Authorization": []string{"Bearer {access-token}"},
-    }
-
-    data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("GET", "https://api.fitit.tk/api/v1/classes/{classId}/code", data)
-    req.Header = headers
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    // ...
-}
-
-```
 
 `GET /classes/{classId}/code`
 
@@ -2065,149 +1454,6 @@ Access to activity information
 
 ## get__activitylog
 
-> Code samples
-
-```shell
-# You can also use wget
-curl -X GET https://api.fitit.tk/api/v1/activitylog \
-  -H 'Accept: application/json' \
-  -H 'Authorization: Bearer {access-token}'
-
-```
-
-```http
-GET https://api.fitit.tk/api/v1/activitylog HTTP/1.1
-Host: api.fitit.tk
-Accept: application/json
-
-```
-
-```javascript
-
-const headers = {
-  'Accept':'application/json',
-  'Authorization':'Bearer {access-token}'
-};
-
-fetch('https://api.fitit.tk/api/v1/activitylog',
-{
-  method: 'GET',
-
-  headers: headers
-})
-.then(function(res) {
-    return res.json();
-}).then(function(body) {
-    console.log(body);
-});
-
-```
-
-```ruby
-require 'rest-client'
-require 'json'
-
-headers = {
-  'Accept' => 'application/json',
-  'Authorization' => 'Bearer {access-token}'
-}
-
-result = RestClient.get 'https://api.fitit.tk/api/v1/activitylog',
-  params: {
-  }, headers: headers
-
-p JSON.parse(result)
-
-```
-
-```python
-import requests
-headers = {
-  'Accept': 'application/json',
-  'Authorization': 'Bearer {access-token}'
-}
-
-r = requests.get('https://api.fitit.tk/api/v1/activitylog', headers = headers)
-
-print(r.json())
-
-```
-
-```php
-<?php
-
-require 'vendor/autoload.php';
-
-$headers = array(
-    'Accept' => 'application/json',
-    'Authorization' => 'Bearer {access-token}',
-);
-
-$client = new \GuzzleHttp\Client();
-
-// Define array of request body.
-$request_body = array();
-
-try {
-    $response = $client->request('GET','https://api.fitit.tk/api/v1/activitylog', array(
-        'headers' => $headers,
-        'json' => $request_body,
-       )
-    );
-    print_r($response->getBody()->getContents());
- }
- catch (\GuzzleHttp\Exception\BadResponseException $e) {
-    // handle exception or api errors.
-    print_r($e->getMessage());
- }
-
- // ...
-
-```
-
-```java
-URL obj = new URL("https://api.fitit.tk/api/v1/activitylog");
-HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-con.setRequestMethod("GET");
-int responseCode = con.getResponseCode();
-BufferedReader in = new BufferedReader(
-    new InputStreamReader(con.getInputStream()));
-String inputLine;
-StringBuffer response = new StringBuffer();
-while ((inputLine = in.readLine()) != null) {
-    response.append(inputLine);
-}
-in.close();
-System.out.println(response.toString());
-
-```
-
-```go
-package main
-
-import (
-       "bytes"
-       "net/http"
-)
-
-func main() {
-
-    headers := map[string][]string{
-        "Accept": []string{"application/json"},
-        "Authorization": []string{"Bearer {access-token}"},
-    }
-
-    data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("GET", "https://api.fitit.tk/api/v1/activitylog", data)
-    req.Header = headers
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    // ...
-}
-
-```
-
 `GET /activitylog`
 
 *Get all current user's activities*
@@ -2223,14 +1469,39 @@ func main() {
 > 200 Response
 
 ```json
-[
-  {
-    "startDate": "2001-01-04T23:00:00.000Z",
-    "_id": "601bd55f22c26a2ef9298df3",
-    "endDate": "2001-01-04T23:00:00.000Z",
-    "activityType_id": "601bd55f22c26a2ef9298df3"
+{
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "startDate": {
+        "type": "string",
+        "description": "Activity beggining date",
+        "example": "2001-01-04T23:00:00.000Z"
+      },
+      "_id": {
+        "type": "string",
+        "description": "Activities ID",
+        "example": "601bd55f22c26a2ef9298df3"
+      },
+      "endDate": {
+        "type": "string",
+        "description": "Activity end date",
+        "example": "2001-01-04T23:00:00.000Z"
+      },
+      "activityType_id": {
+        "type": "string",
+        "description": "The ID of corresponding activity type",
+        "example": "601bd55f22c26a2ef9298df3"
+      }
+    },
+    "required": [
+      "startDate",
+      "_id",
+      "activityType_id"
+    ]
   }
-]
+}
 ```
 
 <h3 id="get__activitylog-responses">Responses</h3>
@@ -2260,160 +1531,6 @@ bearerAuth, tokenInQuery, tokenInCookie
 
 ## post__activitylog
 
-> Code samples
-
-```shell
-# You can also use wget
-curl -X POST https://api.fitit.tk/api/v1/activitylog \
-  -H 'Content-Type: application/json' \
-  -H 'Accept: application/json' \
-  -H 'Authorization: Bearer {access-token}'
-
-```
-
-```http
-POST https://api.fitit.tk/api/v1/activitylog HTTP/1.1
-Host: api.fitit.tk
-Content-Type: application/json
-Accept: application/json
-
-```
-
-```javascript
-const inputBody = '{
-  "startDate": "2001-01-04T23:00:00.000Z",
-  "endDate": "2001-01-04T23:00:00.000Z",
-  "activityType_id": "601bd55f22c26a2ef9298df3"
-}';
-const headers = {
-  'Content-Type':'application/json',
-  'Accept':'application/json',
-  'Authorization':'Bearer {access-token}'
-};
-
-fetch('https://api.fitit.tk/api/v1/activitylog',
-{
-  method: 'POST',
-  body: inputBody,
-  headers: headers
-})
-.then(function(res) {
-    return res.json();
-}).then(function(body) {
-    console.log(body);
-});
-
-```
-
-```ruby
-require 'rest-client'
-require 'json'
-
-headers = {
-  'Content-Type' => 'application/json',
-  'Accept' => 'application/json',
-  'Authorization' => 'Bearer {access-token}'
-}
-
-result = RestClient.post 'https://api.fitit.tk/api/v1/activitylog',
-  params: {
-  }, headers: headers
-
-p JSON.parse(result)
-
-```
-
-```python
-import requests
-headers = {
-  'Content-Type': 'application/json',
-  'Accept': 'application/json',
-  'Authorization': 'Bearer {access-token}'
-}
-
-r = requests.post('https://api.fitit.tk/api/v1/activitylog', headers = headers)
-
-print(r.json())
-
-```
-
-```php
-<?php
-
-require 'vendor/autoload.php';
-
-$headers = array(
-    'Content-Type' => 'application/json',
-    'Accept' => 'application/json',
-    'Authorization' => 'Bearer {access-token}',
-);
-
-$client = new \GuzzleHttp\Client();
-
-// Define array of request body.
-$request_body = array();
-
-try {
-    $response = $client->request('POST','https://api.fitit.tk/api/v1/activitylog', array(
-        'headers' => $headers,
-        'json' => $request_body,
-       )
-    );
-    print_r($response->getBody()->getContents());
- }
- catch (\GuzzleHttp\Exception\BadResponseException $e) {
-    // handle exception or api errors.
-    print_r($e->getMessage());
- }
-
- // ...
-
-```
-
-```java
-URL obj = new URL("https://api.fitit.tk/api/v1/activitylog");
-HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-con.setRequestMethod("POST");
-int responseCode = con.getResponseCode();
-BufferedReader in = new BufferedReader(
-    new InputStreamReader(con.getInputStream()));
-String inputLine;
-StringBuffer response = new StringBuffer();
-while ((inputLine = in.readLine()) != null) {
-    response.append(inputLine);
-}
-in.close();
-System.out.println(response.toString());
-
-```
-
-```go
-package main
-
-import (
-       "bytes"
-       "net/http"
-)
-
-func main() {
-
-    headers := map[string][]string{
-        "Content-Type": []string{"application/json"},
-        "Accept": []string{"application/json"},
-        "Authorization": []string{"Bearer {access-token}"},
-    }
-
-    data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("POST", "https://api.fitit.tk/api/v1/activitylog", data)
-    req.Header = headers
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    // ...
-}
-
-```
-
 `POST /activitylog`
 
 *Add a new activity*
@@ -2422,9 +1539,27 @@ func main() {
 
 ```json
 {
-  "startDate": "2001-01-04T23:00:00.000Z",
-  "endDate": "2001-01-04T23:00:00.000Z",
-  "activityType_id": "601bd55f22c26a2ef9298df3"
+  "type": "object",
+  "properties": {
+    "startDate": {
+      "type": "string",
+      "description": "Activity beggining date",
+      "example": "2001-01-04T23:00:00.000Z"
+    },
+    "endDate": {
+      "type": "string",
+      "description": "Activity end date",
+      "example": "2001-01-04T23:00:00.000Z"
+    },
+    "activityType_id": {
+      "type": "string",
+      "description": "The ID of corresponding activity type",
+      "example": "601bd55f22c26a2ef9298df3"
+    }
+  },
+  "required": [
+    "activityType_id"
+  ]
 }
 ```
 
@@ -2433,6 +1568,9 @@ func main() {
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |body|body|[ActivityLogObject](#schemaactivitylogobject)|true|An activity object to add|
+|» startDate|body|string|false|Activity beggining date|
+|» endDate|body|string|false|Activity end date|
+|» activityType_id|body|string|true|The ID of corresponding activity type|
 
 > Example responses
 
@@ -2440,10 +1578,34 @@ func main() {
 
 ```json
 {
-  "startDate": "2001-01-04T23:00:00.000Z",
-  "_id": "601bd55f22c26a2ef9298df3",
-  "endDate": "2001-01-04T23:00:00.000Z",
-  "activityType_id": "601bd55f22c26a2ef9298df3"
+  "type": "object",
+  "properties": {
+    "startDate": {
+      "type": "string",
+      "description": "Activity beggining date",
+      "example": "2001-01-04T23:00:00.000Z"
+    },
+    "_id": {
+      "type": "string",
+      "description": "Activities ID",
+      "example": "601bd55f22c26a2ef9298df3"
+    },
+    "endDate": {
+      "type": "string",
+      "description": "Activity end date",
+      "example": "2001-01-04T23:00:00.000Z"
+    },
+    "activityType_id": {
+      "type": "string",
+      "description": "The ID of corresponding activity type",
+      "example": "601bd55f22c26a2ef9298df3"
+    }
+  },
+  "required": [
+    "startDate",
+    "_id",
+    "activityType_id"
+  ]
 }
 ```
 
@@ -2465,149 +1627,6 @@ bearerAuth, tokenInQuery, tokenInCookie
 
 ## get__activitylog_{activityId}
 
-> Code samples
-
-```shell
-# You can also use wget
-curl -X GET https://api.fitit.tk/api/v1/activitylog/{activityId} \
-  -H 'Accept: application/json' \
-  -H 'Authorization: Bearer {access-token}'
-
-```
-
-```http
-GET https://api.fitit.tk/api/v1/activitylog/{activityId} HTTP/1.1
-Host: api.fitit.tk
-Accept: application/json
-
-```
-
-```javascript
-
-const headers = {
-  'Accept':'application/json',
-  'Authorization':'Bearer {access-token}'
-};
-
-fetch('https://api.fitit.tk/api/v1/activitylog/{activityId}',
-{
-  method: 'GET',
-
-  headers: headers
-})
-.then(function(res) {
-    return res.json();
-}).then(function(body) {
-    console.log(body);
-});
-
-```
-
-```ruby
-require 'rest-client'
-require 'json'
-
-headers = {
-  'Accept' => 'application/json',
-  'Authorization' => 'Bearer {access-token}'
-}
-
-result = RestClient.get 'https://api.fitit.tk/api/v1/activitylog/{activityId}',
-  params: {
-  }, headers: headers
-
-p JSON.parse(result)
-
-```
-
-```python
-import requests
-headers = {
-  'Accept': 'application/json',
-  'Authorization': 'Bearer {access-token}'
-}
-
-r = requests.get('https://api.fitit.tk/api/v1/activitylog/{activityId}', headers = headers)
-
-print(r.json())
-
-```
-
-```php
-<?php
-
-require 'vendor/autoload.php';
-
-$headers = array(
-    'Accept' => 'application/json',
-    'Authorization' => 'Bearer {access-token}',
-);
-
-$client = new \GuzzleHttp\Client();
-
-// Define array of request body.
-$request_body = array();
-
-try {
-    $response = $client->request('GET','https://api.fitit.tk/api/v1/activitylog/{activityId}', array(
-        'headers' => $headers,
-        'json' => $request_body,
-       )
-    );
-    print_r($response->getBody()->getContents());
- }
- catch (\GuzzleHttp\Exception\BadResponseException $e) {
-    // handle exception or api errors.
-    print_r($e->getMessage());
- }
-
- // ...
-
-```
-
-```java
-URL obj = new URL("https://api.fitit.tk/api/v1/activitylog/{activityId}");
-HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-con.setRequestMethod("GET");
-int responseCode = con.getResponseCode();
-BufferedReader in = new BufferedReader(
-    new InputStreamReader(con.getInputStream()));
-String inputLine;
-StringBuffer response = new StringBuffer();
-while ((inputLine = in.readLine()) != null) {
-    response.append(inputLine);
-}
-in.close();
-System.out.println(response.toString());
-
-```
-
-```go
-package main
-
-import (
-       "bytes"
-       "net/http"
-)
-
-func main() {
-
-    headers := map[string][]string{
-        "Accept": []string{"application/json"},
-        "Authorization": []string{"Bearer {access-token}"},
-    }
-
-    data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("GET", "https://api.fitit.tk/api/v1/activitylog/{activityId}", data)
-    req.Header = headers
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    // ...
-}
-
-```
-
 `GET /activitylog/{activityId}`
 
 *Get a single activity by ID*
@@ -2624,10 +1643,34 @@ func main() {
 
 ```json
 {
-  "startDate": "2001-01-04T23:00:00.000Z",
-  "_id": "601bd55f22c26a2ef9298df3",
-  "endDate": "2001-01-04T23:00:00.000Z",
-  "activityType_id": "601bd55f22c26a2ef9298df3"
+  "type": "object",
+  "properties": {
+    "startDate": {
+      "type": "string",
+      "description": "Activity beggining date",
+      "example": "2001-01-04T23:00:00.000Z"
+    },
+    "_id": {
+      "type": "string",
+      "description": "Activities ID",
+      "example": "601bd55f22c26a2ef9298df3"
+    },
+    "endDate": {
+      "type": "string",
+      "description": "Activity end date",
+      "example": "2001-01-04T23:00:00.000Z"
+    },
+    "activityType_id": {
+      "type": "string",
+      "description": "The ID of corresponding activity type",
+      "example": "601bd55f22c26a2ef9298df3"
+    }
+  },
+  "required": [
+    "startDate",
+    "_id",
+    "activityType_id"
+  ]
 }
 ```
 
@@ -2650,160 +1693,6 @@ bearerAuth, tokenInQuery, tokenInCookie
 
 ## patch__activitylog_{activityId}
 
-> Code samples
-
-```shell
-# You can also use wget
-curl -X PATCH https://api.fitit.tk/api/v1/activitylog/{activityId} \
-  -H 'Content-Type: application/json' \
-  -H 'Accept: application/json' \
-  -H 'Authorization: Bearer {access-token}'
-
-```
-
-```http
-PATCH https://api.fitit.tk/api/v1/activitylog/{activityId} HTTP/1.1
-Host: api.fitit.tk
-Content-Type: application/json
-Accept: application/json
-
-```
-
-```javascript
-const inputBody = '{
-  "startDate": "2001-01-04T23:00:00.000Z",
-  "endDate": "2001-01-04T23:00:00.000Z",
-  "activityType_id": "601bd55f22c26a2ef9298df3"
-}';
-const headers = {
-  'Content-Type':'application/json',
-  'Accept':'application/json',
-  'Authorization':'Bearer {access-token}'
-};
-
-fetch('https://api.fitit.tk/api/v1/activitylog/{activityId}',
-{
-  method: 'PATCH',
-  body: inputBody,
-  headers: headers
-})
-.then(function(res) {
-    return res.json();
-}).then(function(body) {
-    console.log(body);
-});
-
-```
-
-```ruby
-require 'rest-client'
-require 'json'
-
-headers = {
-  'Content-Type' => 'application/json',
-  'Accept' => 'application/json',
-  'Authorization' => 'Bearer {access-token}'
-}
-
-result = RestClient.patch 'https://api.fitit.tk/api/v1/activitylog/{activityId}',
-  params: {
-  }, headers: headers
-
-p JSON.parse(result)
-
-```
-
-```python
-import requests
-headers = {
-  'Content-Type': 'application/json',
-  'Accept': 'application/json',
-  'Authorization': 'Bearer {access-token}'
-}
-
-r = requests.patch('https://api.fitit.tk/api/v1/activitylog/{activityId}', headers = headers)
-
-print(r.json())
-
-```
-
-```php
-<?php
-
-require 'vendor/autoload.php';
-
-$headers = array(
-    'Content-Type' => 'application/json',
-    'Accept' => 'application/json',
-    'Authorization' => 'Bearer {access-token}',
-);
-
-$client = new \GuzzleHttp\Client();
-
-// Define array of request body.
-$request_body = array();
-
-try {
-    $response = $client->request('PATCH','https://api.fitit.tk/api/v1/activitylog/{activityId}', array(
-        'headers' => $headers,
-        'json' => $request_body,
-       )
-    );
-    print_r($response->getBody()->getContents());
- }
- catch (\GuzzleHttp\Exception\BadResponseException $e) {
-    // handle exception or api errors.
-    print_r($e->getMessage());
- }
-
- // ...
-
-```
-
-```java
-URL obj = new URL("https://api.fitit.tk/api/v1/activitylog/{activityId}");
-HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-con.setRequestMethod("PATCH");
-int responseCode = con.getResponseCode();
-BufferedReader in = new BufferedReader(
-    new InputStreamReader(con.getInputStream()));
-String inputLine;
-StringBuffer response = new StringBuffer();
-while ((inputLine = in.readLine()) != null) {
-    response.append(inputLine);
-}
-in.close();
-System.out.println(response.toString());
-
-```
-
-```go
-package main
-
-import (
-       "bytes"
-       "net/http"
-)
-
-func main() {
-
-    headers := map[string][]string{
-        "Content-Type": []string{"application/json"},
-        "Accept": []string{"application/json"},
-        "Authorization": []string{"Bearer {access-token}"},
-    }
-
-    data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("PATCH", "https://api.fitit.tk/api/v1/activitylog/{activityId}", data)
-    req.Header = headers
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    // ...
-}
-
-```
-
 `PATCH /activitylog/{activityId}`
 
 *Change a single activity*
@@ -2812,9 +1701,27 @@ func main() {
 
 ```json
 {
-  "startDate": "2001-01-04T23:00:00.000Z",
-  "endDate": "2001-01-04T23:00:00.000Z",
-  "activityType_id": "601bd55f22c26a2ef9298df3"
+  "type": "object",
+  "properties": {
+    "startDate": {
+      "type": "string",
+      "description": "Activity beggining date",
+      "example": "2001-01-04T23:00:00.000Z"
+    },
+    "endDate": {
+      "type": "string",
+      "description": "Activity end date",
+      "example": "2001-01-04T23:00:00.000Z"
+    },
+    "activityType_id": {
+      "type": "string",
+      "description": "The ID of corresponding activity type",
+      "example": "601bd55f22c26a2ef9298df3"
+    }
+  },
+  "required": [
+    "activityType_id"
+  ]
 }
 ```
 
@@ -2824,6 +1731,9 @@ func main() {
 |---|---|---|---|---|
 |activityId|path|string|true|An activities unique ID|
 |body|body|[ActivityLogObject](#schemaactivitylogobject)|false|A modified activity object|
+|» startDate|body|string|false|Activity beggining date|
+|» endDate|body|string|false|Activity end date|
+|» activityType_id|body|string|true|The ID of corresponding activity type|
 
 > Example responses
 
@@ -2831,10 +1741,34 @@ func main() {
 
 ```json
 {
-  "startDate": "2001-01-04T23:00:00.000Z",
-  "_id": "601bd55f22c26a2ef9298df3",
-  "endDate": "2001-01-04T23:00:00.000Z",
-  "activityType_id": "601bd55f22c26a2ef9298df3"
+  "type": "object",
+  "properties": {
+    "startDate": {
+      "type": "string",
+      "description": "Activity beggining date",
+      "example": "2001-01-04T23:00:00.000Z"
+    },
+    "_id": {
+      "type": "string",
+      "description": "Activities ID",
+      "example": "601bd55f22c26a2ef9298df3"
+    },
+    "endDate": {
+      "type": "string",
+      "description": "Activity end date",
+      "example": "2001-01-04T23:00:00.000Z"
+    },
+    "activityType_id": {
+      "type": "string",
+      "description": "The ID of corresponding activity type",
+      "example": "601bd55f22c26a2ef9298df3"
+    }
+  },
+  "required": [
+    "startDate",
+    "_id",
+    "activityType_id"
+  ]
 }
 ```
 
@@ -2862,143 +1796,6 @@ Access to activity types information
 
 ## get__activitytypes
 
-> Code samples
-
-```shell
-# You can also use wget
-curl -X GET https://api.fitit.tk/api/v1/activitytypes \
-  -H 'Accept: application/json'
-
-```
-
-```http
-GET https://api.fitit.tk/api/v1/activitytypes HTTP/1.1
-Host: api.fitit.tk
-Accept: application/json
-
-```
-
-```javascript
-
-const headers = {
-  'Accept':'application/json'
-};
-
-fetch('https://api.fitit.tk/api/v1/activitytypes',
-{
-  method: 'GET',
-
-  headers: headers
-})
-.then(function(res) {
-    return res.json();
-}).then(function(body) {
-    console.log(body);
-});
-
-```
-
-```ruby
-require 'rest-client'
-require 'json'
-
-headers = {
-  'Accept' => 'application/json'
-}
-
-result = RestClient.get 'https://api.fitit.tk/api/v1/activitytypes',
-  params: {
-  }, headers: headers
-
-p JSON.parse(result)
-
-```
-
-```python
-import requests
-headers = {
-  'Accept': 'application/json'
-}
-
-r = requests.get('https://api.fitit.tk/api/v1/activitytypes', headers = headers)
-
-print(r.json())
-
-```
-
-```php
-<?php
-
-require 'vendor/autoload.php';
-
-$headers = array(
-    'Accept' => 'application/json',
-);
-
-$client = new \GuzzleHttp\Client();
-
-// Define array of request body.
-$request_body = array();
-
-try {
-    $response = $client->request('GET','https://api.fitit.tk/api/v1/activitytypes', array(
-        'headers' => $headers,
-        'json' => $request_body,
-       )
-    );
-    print_r($response->getBody()->getContents());
- }
- catch (\GuzzleHttp\Exception\BadResponseException $e) {
-    // handle exception or api errors.
-    print_r($e->getMessage());
- }
-
- // ...
-
-```
-
-```java
-URL obj = new URL("https://api.fitit.tk/api/v1/activitytypes");
-HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-con.setRequestMethod("GET");
-int responseCode = con.getResponseCode();
-BufferedReader in = new BufferedReader(
-    new InputStreamReader(con.getInputStream()));
-String inputLine;
-StringBuffer response = new StringBuffer();
-while ((inputLine = in.readLine()) != null) {
-    response.append(inputLine);
-}
-in.close();
-System.out.println(response.toString());
-
-```
-
-```go
-package main
-
-import (
-       "bytes"
-       "net/http"
-)
-
-func main() {
-
-    headers := map[string][]string{
-        "Accept": []string{"application/json"},
-    }
-
-    data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("GET", "https://api.fitit.tk/api/v1/activitytypes", data)
-    req.Header = headers
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    // ...
-}
-
-```
-
 `GET /activitytypes`
 
 *Get all available activity types*
@@ -3008,13 +1805,29 @@ func main() {
 > 200 Response
 
 ```json
-[
-  {
-    "name": "kolarstwo",
-    "kcalPerHour": 300,
-    "_id": "601bd55f22c26a2ef9298df3"
+{
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Activity type's name",
+        "example": "kolarstwo"
+      },
+      "kcalPerHour": {
+        "type": "number",
+        "description": "KCal burned per hour on activity type",
+        "example": 300
+      },
+      "_id": {
+        "type": "string",
+        "description": "Activity type's unique ID",
+        "example": "601bd55f22c26a2ef9298df3"
+      }
+    }
   }
-]
+}
 ```
 
 <h3 id="get__activitytypes-responses">Responses</h3>
@@ -3041,143 +1854,6 @@ This operation does not require authentication
 
 ## get__activitytypes_{activityTypeId}
 
-> Code samples
-
-```shell
-# You can also use wget
-curl -X GET https://api.fitit.tk/api/v1/activitytypes/{activityTypeId} \
-  -H 'Accept: application/json'
-
-```
-
-```http
-GET https://api.fitit.tk/api/v1/activitytypes/{activityTypeId} HTTP/1.1
-Host: api.fitit.tk
-Accept: application/json
-
-```
-
-```javascript
-
-const headers = {
-  'Accept':'application/json'
-};
-
-fetch('https://api.fitit.tk/api/v1/activitytypes/{activityTypeId}',
-{
-  method: 'GET',
-
-  headers: headers
-})
-.then(function(res) {
-    return res.json();
-}).then(function(body) {
-    console.log(body);
-});
-
-```
-
-```ruby
-require 'rest-client'
-require 'json'
-
-headers = {
-  'Accept' => 'application/json'
-}
-
-result = RestClient.get 'https://api.fitit.tk/api/v1/activitytypes/{activityTypeId}',
-  params: {
-  }, headers: headers
-
-p JSON.parse(result)
-
-```
-
-```python
-import requests
-headers = {
-  'Accept': 'application/json'
-}
-
-r = requests.get('https://api.fitit.tk/api/v1/activitytypes/{activityTypeId}', headers = headers)
-
-print(r.json())
-
-```
-
-```php
-<?php
-
-require 'vendor/autoload.php';
-
-$headers = array(
-    'Accept' => 'application/json',
-);
-
-$client = new \GuzzleHttp\Client();
-
-// Define array of request body.
-$request_body = array();
-
-try {
-    $response = $client->request('GET','https://api.fitit.tk/api/v1/activitytypes/{activityTypeId}', array(
-        'headers' => $headers,
-        'json' => $request_body,
-       )
-    );
-    print_r($response->getBody()->getContents());
- }
- catch (\GuzzleHttp\Exception\BadResponseException $e) {
-    // handle exception or api errors.
-    print_r($e->getMessage());
- }
-
- // ...
-
-```
-
-```java
-URL obj = new URL("https://api.fitit.tk/api/v1/activitytypes/{activityTypeId}");
-HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-con.setRequestMethod("GET");
-int responseCode = con.getResponseCode();
-BufferedReader in = new BufferedReader(
-    new InputStreamReader(con.getInputStream()));
-String inputLine;
-StringBuffer response = new StringBuffer();
-while ((inputLine = in.readLine()) != null) {
-    response.append(inputLine);
-}
-in.close();
-System.out.println(response.toString());
-
-```
-
-```go
-package main
-
-import (
-       "bytes"
-       "net/http"
-)
-
-func main() {
-
-    headers := map[string][]string{
-        "Accept": []string{"application/json"},
-    }
-
-    data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("GET", "https://api.fitit.tk/api/v1/activitytypes/{activityTypeId}", data)
-    req.Header = headers
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    // ...
-}
-
-```
-
 `GET /activitytypes/{activityTypeId}`
 
 *Get a single activity type specified by ID*
@@ -3194,9 +1870,24 @@ func main() {
 
 ```json
 {
-  "name": "kolarstwo",
-  "kcalPerHour": 300,
-  "_id": "601bd55f22c26a2ef9298df3"
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Activity type's name",
+      "example": "kolarstwo"
+    },
+    "kcalPerHour": {
+      "type": "number",
+      "description": "KCal burned per hour on activity type",
+      "example": 300
+    },
+    "_id": {
+      "type": "string",
+      "description": "Activity type's unique ID",
+      "example": "601bd55f22c26a2ef9298df3"
+    }
+  }
 }
 ```
 
@@ -3223,8 +1914,21 @@ This operation does not require authentication
 
 ```json
 {
-  "status": 0,
-  "message": "string"
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "number",
+      "description": "HTTP status"
+    },
+    "message": {
+      "type": "string",
+      "description": "Exception message"
+    }
+  },
+  "required": [
+    "status",
+    "message"
+  ]
 }
 
 ```
@@ -3245,9 +1949,24 @@ This operation does not require authentication
 
 ```json
 {
-  "name": "kolarstwo",
-  "kcalPerHour": 300,
-  "_id": "601bd55f22c26a2ef9298df3"
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Activity type's name",
+      "example": "kolarstwo"
+    },
+    "kcalPerHour": {
+      "type": "number",
+      "description": "KCal burned per hour on activity type",
+      "example": 300
+    },
+    "_id": {
+      "type": "string",
+      "description": "Activity type's unique ID",
+      "example": "601bd55f22c26a2ef9298df3"
+    }
+  }
 }
 
 ```
@@ -3269,10 +1988,34 @@ This operation does not require authentication
 
 ```json
 {
-  "startDate": "2001-01-04T23:00:00.000Z",
-  "_id": "601bd55f22c26a2ef9298df3",
-  "endDate": "2001-01-04T23:00:00.000Z",
-  "activityType_id": "601bd55f22c26a2ef9298df3"
+  "type": "object",
+  "properties": {
+    "startDate": {
+      "type": "string",
+      "description": "Activity beggining date",
+      "example": "2001-01-04T23:00:00.000Z"
+    },
+    "_id": {
+      "type": "string",
+      "description": "Activities ID",
+      "example": "601bd55f22c26a2ef9298df3"
+    },
+    "endDate": {
+      "type": "string",
+      "description": "Activity end date",
+      "example": "2001-01-04T23:00:00.000Z"
+    },
+    "activityType_id": {
+      "type": "string",
+      "description": "The ID of corresponding activity type",
+      "example": "601bd55f22c26a2ef9298df3"
+    }
+  },
+  "required": [
+    "startDate",
+    "_id",
+    "activityType_id"
+  ]
 }
 
 ```
@@ -3295,9 +2038,27 @@ This operation does not require authentication
 
 ```json
 {
-  "startDate": "2001-01-04T23:00:00.000Z",
-  "endDate": "2001-01-04T23:00:00.000Z",
-  "activityType_id": "601bd55f22c26a2ef9298df3"
+  "type": "object",
+  "properties": {
+    "startDate": {
+      "type": "string",
+      "description": "Activity beggining date",
+      "example": "2001-01-04T23:00:00.000Z"
+    },
+    "endDate": {
+      "type": "string",
+      "description": "Activity end date",
+      "example": "2001-01-04T23:00:00.000Z"
+    },
+    "activityType_id": {
+      "type": "string",
+      "description": "The ID of corresponding activity type",
+      "example": "601bd55f22c26a2ef9298df3"
+    }
+  },
+  "required": [
+    "activityType_id"
+  ]
 }
 
 ```
@@ -3319,14 +2080,50 @@ This operation does not require authentication
 
 ```json
 {
-  "class_ids": [
-    "601bd55f22c26a2ef9298df3"
-  ],
-  "_id": "601be28e50364b654dec42cf",
-  "isActive": true,
-  "isTeacher": false,
-  "name": "James",
-  "surname": "Smith"
+  "type": "object",
+  "properties": {
+    "class_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "IDs of classes the user belongs to",
+        "example": "601bd55f22c26a2ef9298df3"
+      }
+    },
+    "_id": {
+      "type": "string",
+      "description": "User's ID",
+      "example": "601be28e50364b654dec42cf"
+    },
+    "isActive": {
+      "type": "boolean",
+      "description": "Was the user's account active",
+      "example": true
+    },
+    "isTeacher": {
+      "type": "boolean",
+      "description": "Is the user a teacher",
+      "example": false
+    },
+    "name": {
+      "type": "string",
+      "description": "User's name",
+      "example": "James"
+    },
+    "surname": {
+      "type": "string",
+      "description": "User's surname",
+      "example": "Smith"
+    }
+  },
+  "required": [
+    "class_ids",
+    "_id",
+    "isActive",
+    "isTeacher",
+    "name",
+    "surname"
+  ]
 }
 
 ```
@@ -3351,16 +2148,66 @@ This operation does not require authentication
 
 ```json
 {
-  "class_ids": [
-    "601bd55f22c26a2ef9298df3"
-  ],
-  "_id": "601be28e50364b654dec42cf",
-  "isActive": true,
-  "isTeacher": false,
-  "name": "James",
-  "surname": "Smith",
-  "activityLog_ids": [
-    "601bef6a25c8480b19dd54cd"
+  "allOf": [
+    {
+      "type": "object",
+      "properties": {
+        "class_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "IDs of classes the user belongs to",
+            "example": "601bd55f22c26a2ef9298df3"
+          }
+        },
+        "_id": {
+          "type": "string",
+          "description": "User's ID",
+          "example": "601be28e50364b654dec42cf"
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Was the user's account active",
+          "example": true
+        },
+        "isTeacher": {
+          "type": "boolean",
+          "description": "Is the user a teacher",
+          "example": false
+        },
+        "name": {
+          "type": "string",
+          "description": "User's name",
+          "example": "James"
+        },
+        "surname": {
+          "type": "string",
+          "description": "User's surname",
+          "example": "Smith"
+        }
+      },
+      "required": [
+        "class_ids",
+        "_id",
+        "isActive",
+        "isTeacher",
+        "name",
+        "surname"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "activityLog_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "IDs of activities the user performed",
+            "example": "601bef6a25c8480b19dd54cd"
+          }
+        }
+      }
+    }
   ]
 }
 
@@ -3390,22 +2237,105 @@ and
 
 ```json
 {
-  "class_ids": [
-    "601bd55f22c26a2ef9298df3"
-  ],
-  "_id": "601be28e50364b654dec42cf",
-  "isActive": true,
-  "isTeacher": false,
-  "name": "James",
-  "surname": "Smith",
-  "activityLog_ids": [
-    "601bef6a25c8480b19dd54cd"
-  ],
-  "email": "email@example.com",
-  "birthDate": "2001-01-04T23:00:00.000Z",
-  "dateCreated": "2021-02-04T12:03:26.000Z",
-  "height": 182,
-  "weight": 60
+  "allOf": [
+    {
+      "allOf": [
+        {
+          "type": "object",
+          "properties": {
+            "class_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "IDs of classes the user belongs to",
+                "example": "601bd55f22c26a2ef9298df3"
+              }
+            },
+            "_id": {
+              "type": "string",
+              "description": "User's ID",
+              "example": "601be28e50364b654dec42cf"
+            },
+            "isActive": {
+              "type": "boolean",
+              "description": "Was the user's account active",
+              "example": true
+            },
+            "isTeacher": {
+              "type": "boolean",
+              "description": "Is the user a teacher",
+              "example": false
+            },
+            "name": {
+              "type": "string",
+              "description": "User's name",
+              "example": "James"
+            },
+            "surname": {
+              "type": "string",
+              "description": "User's surname",
+              "example": "Smith"
+            }
+          },
+          "required": [
+            "class_ids",
+            "_id",
+            "isActive",
+            "isTeacher",
+            "name",
+            "surname"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "activityLog_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "IDs of activities the user performed",
+                "example": "601bef6a25c8480b19dd54cd"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "User's email address",
+          "example": "email@example.com"
+        },
+        "birthDate": {
+          "type": "string",
+          "description": "User's date of birth",
+          "example": "2001-01-04T23:00:00.000Z"
+        },
+        "dateCreated": {
+          "type": "string",
+          "description": "The date of account's creation",
+          "example": "2021-02-04T12:03:26.000Z"
+        },
+        "height": {
+          "type": "number",
+          "description": "User's height",
+          "example": 182
+        },
+        "weight": {
+          "type": "number",
+          "description": "User's weight",
+          "example": 60
+        }
+      },
+      "required": [
+        "email",
+        "dateCreated"
+      ]
+    }
+  ]
 }
 
 ```
@@ -3458,8 +2388,23 @@ Authorization JWT token
 
 ```json
 {
-  "email": "email@example.com",
-  "password": "qwerty2137"
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string",
+      "description": "User's email",
+      "example": "email@example.com"
+    },
+    "password": {
+      "type": "string",
+      "description": "User's password",
+      "example": "qwerty2137"
+    }
+  },
+  "required": [
+    "email",
+    "password"
+  ]
 }
 
 ```
@@ -3480,15 +2425,72 @@ Authorization JWT token
 
 ```json
 {
-  "email": "email@example.com",
-  "password": "qwerty2137",
-  "name": "James",
-  "surname": "Smith",
-  "classId": "dzikie-węże",
-  "birthDate": "2001-01-04T23:00:00.000Z",
-  "height": 180,
-  "weight": 60,
-  "isTeacher": false
+  "allOf": [
+    {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "User's email",
+          "example": "email@example.com"
+        },
+        "password": {
+          "type": "string",
+          "description": "User's password",
+          "example": "qwerty2137"
+        }
+      },
+      "required": [
+        "email",
+        "password"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "User's name",
+          "example": "James"
+        },
+        "surname": {
+          "type": "string",
+          "description": "User's surname",
+          "example": "Smith"
+        },
+        "classId": {
+          "type": "string",
+          "description": "Unique human-readable identifier of a class",
+          "example": "dzikie-węże"
+        },
+        "birthDate": {
+          "type": "string",
+          "description": "User's birth date",
+          "example": "2001-01-04T23:00:00.000Z"
+        },
+        "height": {
+          "type": "number",
+          "description": "User's height",
+          "example": 180
+        },
+        "weight": {
+          "type": "number",
+          "description": "User's weight",
+          "example": 60
+        },
+        "isTeacher": {
+          "type": "boolean",
+          "description": "Is user a teacher",
+          "example": false
+        }
+      },
+      "required": [
+        "name",
+        "surname",
+        "classId"
+      ]
+    }
+  ]
 }
 
 ```
@@ -3523,9 +2525,24 @@ and
 
 ```json
 {
-  "_id": "601bd55f22c26a2ef9298df3",
-  "name": "4TB",
-  "isActive": true
+  "type": "object",
+  "properties": {
+    "_id": {
+      "type": "string",
+      "description": "Id of the class",
+      "example": "601bd55f22c26a2ef9298df3"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name of the class",
+      "example": "4TB"
+    },
+    "isActive": {
+      "type": "boolean",
+      "description": "Is the class active",
+      "example": true
+    }
+  }
 }
 
 ```
