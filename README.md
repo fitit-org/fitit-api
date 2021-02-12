@@ -19,7 +19,7 @@ node dist/server.js
 
 ## Documentation
 
-Documentation is available in Markdown format at [APIDOC.md](APIDOC.md) or hosted with Swagger UI at /docs.
+Documentation is hosted with Swagger UI at /docs.
 
 ## License
 
