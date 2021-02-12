@@ -1,0 +1,842 @@
+openapi: 3.0.1
+info:
+  title: FitIT API
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  version: 1.0.0
+servers:
+- url: https://api.fitit.tk/api/v1
+tags:
+- name: auth
+  description: Login or register
+- name: user
+  description: Access to user information
+- name: classes
+  description: Access to classes information
+- name: activitylog
+  description: Access to activity information
+- name: activitytypes
+  description: Access to activity types information
+security:
+  - bearerAuth: []
+  - tokenInQuery: []
+  - tokenInCookie: []
+paths:
+  /auth/login:
+    post:
+      tags:
+      - auth
+      summary: Authorize and get a token
+      requestBody:
+        description: User's email and password
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginData'
+              
+        required: true
+      security: []
+      responses:
+        200:
+          description: Login successfull
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/PrivateUserInfo'
+                  token:
+                    $ref: '#/components/schemas/TokenObject'
+                required:
+                  - user
+                  - token
+        400:
+          $ref: '#/components/responses/ValidationError'
+        500:
+          $ref: '#/components/responses/DBException'
+        401:
+          $ref: '#/components/responses/WrongCredentialsException'
+  /auth/register:
+    post:
+      tags:
+      - auth
+      summary: Register a user
+      requestBody:
+        description: User's data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationData'
+        required: true
+      security: []
+      responses:
+        200:
+          description: Registration successfull
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivateUserInfo'
+        400:
+          description: Data couldn't be validated, a user with an email already exists or the provided classId is invalid
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/ValidationError'
+                  - $ref: '#/components/responses/UserWithThatEmailAlreadyExistsException'
+                  - $ref: '#/components/responses/NoSuchClassException'
+        500:
+          $ref: '#/components/responses/DBException'
+  /user:
+    get:
+      tags:
+      - user
+      summary: Get current user's information
+      responses:
+        200:
+          description: Current user's data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivateUserInfo'
+        500:
+          $ref: '#/components/responses/DBException'
+        401:
+          description: The authentication token is either invalid or is missing
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/WrongAuthenticationTokenException'
+                  - $ref: '#/components/responses/AuthenticationTokenMissingException'
+    patch:
+      tags:
+      - user
+      summary: Update user's current information
+      requestBody:
+        description: Partial user's data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationData'
+        required: false
+      responses:
+        200:
+          description: User's updated data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivateUserInfo'
+        401:
+          description: The authentication token is either invalid or is missing
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/WrongAuthenticationTokenException'
+                  - $ref: '#/components/responses/AuthenticationTokenMissingException'
+        400:
+          $ref: '#/components/responses/ValidationError'
+        500:
+          $ref: '#/components/responses/DBException'
+    delete:
+      tags:
+      - user
+      summary: Delete user's account
+      responses:
+        200:
+          description: Account successfully removed
+        401:
+          description: The authentication token is either invalid or is missing
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/WrongAuthenticationTokenException'
+                  - $ref: '#/components/responses/AuthenticationTokenMissingException'
+        500:
+          $ref: '#/components/responses/DBException'
+  /user/{userId}:
+    get:
+      tags:
+      - user
+      summary: Get a user by ID
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: string
+          required: true
+          description: User's unique ID
+      responses:
+        200:
+          description: User's data (privacy level varies)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/PrivateUserInfo'
+                  - $ref: '#/components/schemas/TeachersUserInfo'
+                  - $ref: '#/components/schemas/BasicUserInfo'
+        401:
+          description: The authentication token is either invalid or is missing
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/WrongAuthenticationTokenException'
+                  - $ref: '#/components/responses/AuthenticationTokenMissingException'
+        500:
+          $ref: '#/components/responses/DBException'
+        404:
+          $ref: '#/components/responses/UserNotFoundException'
+        403:
+          $ref: '#/components/responses/UnauthorizedToViewUserException'
+  /classes:
+    get:
+      tags:
+      - classes
+      summary: Get all classes
+      responses:
+        200:
+          description: A list of all classes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClassObject'
+        401:
+          description: The authentication token is either invalid or is missing
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/WrongAuthenticationTokenException'
+                  - $ref: '#/components/responses/AuthenticationTokenMissingException'
+        500:
+          $ref: '#/components/responses/DBException'
+  /classess/{classId}:
+    get:
+      tags:
+      - classes
+      summary: Get a class by ID
+      parameters:
+        - in: path
+          name: classId
+          schema:
+            type: string
+          required: true
+          description: A class unique ID
+      responses:
+        200:
+          description: A single class
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassObject'
+        401:
+          description: The authentication token is either invalid or is missing
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/WrongAuthenticationTokenException'
+                  - $ref: '#/components/responses/AuthenticationTokenMissingException'
+        404:
+          $ref: '#/components/responses/ClassNotFoundException'
+        500:
+          $ref: '#/components/responses/DBException'
+  /classes/{classId}/users:
+    get:
+      tags:
+      - classes
+      summary: Get users from a class
+      parameters:
+        - in: path
+          name: classId
+          schema:
+            type: string
+          required: true
+          description: A class unique ID
+      responses:
+        200:
+          description: Users belonging to a class (privacy level varies)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  anyOf:
+                    - $ref: '#/components/schemas/BasicUserInfo'
+                    - $ref: '#/components/schemas/TeachersUserInfo'
+        401:
+          description: The authentication token is either invalid or is missing
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/WrongAuthenticationTokenException'
+                  - $ref: '#/components/responses/AuthenticationTokenMissingException'
+        403:
+          $ref: '#/components/responses/UnauthorizedToViewClassException'
+        404:
+          $ref: '#/components/responses/ClassNotFoundException'
+        500:
+          $ref: '#/components/responses/DBException'
+  /classes/{classId}/code:
+    get:
+      tags:
+      - classes
+      summary: Generate a class-join code in human-readable format
+      parameters:
+        - in: path
+          name: classId
+          schema:
+            type: string
+          required: true
+          description: A class unique ID
+      responses:
+        200:
+          description: A class-join code in human-readable format
+          content:
+            application/json:
+              schema:
+                type: string
+                description: A class-join code in human-readable format
+                example: dzikie-węże
+        401:
+          description: The authentication token is either invalid or is missing
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/WrongAuthenticationTokenException'
+                  - $ref: '#/components/responses/AuthenticationTokenMissingException'
+        403:
+          description: The user does not belong to the class or is not the teacher
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/UnauthorizedToViewClassException'
+                  - $ref: '#/components/responses/UserNotTeacherException'
+        404:
+          $ref: '#/components/responses/ClassNotFoundException'
+        500:
+          $ref: '#/components/responses/DBException'
+  /activitylog:
+    get:
+      tags:
+      - activitylog
+      summary: Get all current user's activities
+      parameters:
+        - in: query
+          name: onlyUnfinished
+          schema:
+            type: boolean
+          description: Whether to return only unfinished activities
+      responses:
+        200:
+          description: An array of user's activities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActivityLog'
+        401:
+          description: The authentication token is either invalid or is missing
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/WrongAuthenticationTokenException'
+                  - $ref: '#/components/responses/AuthenticationTokenMissingException'
+        500:
+          $ref: '#/components/responses/DBException'
+    post:
+      tags:
+      - activitylog
+      summary: Add a new activity
+      requestBody:
+        description: An activity object to add
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivityLogObject'
+        required: true
+      responses:
+        200:
+          description: A newly created activity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivityLog'
+        400:
+          description: Validation error, no such activity type, or the endDate was earlier than the startDate
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/ActivityTypeNotFoundException'
+                  - $ref: '#/components/responses/ValidationError'
+                  - $ref: '#/components/responses/InvalidActivityTimesException'
+        401:
+          description: The authentication token is either invalid or is missing
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/WrongAuthenticationTokenException'
+                  - $ref: '#/components/responses/AuthenticationTokenMissingException'
+        500:
+          $ref: '#/components/responses/DBException'
+  /activitylog/{activityId}:
+    get:
+      tags:
+      - activitylog
+      summary: Get a single activity by ID
+      parameters:
+        - in: path
+          name: activityId
+          schema:
+            type: string
+          required: true
+          description: An activities unique ID
+      responses:
+        200:
+          description: Specified activity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivityLog'
+        401:
+          description: The authentication token is either invalid or is missing
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/WrongAuthenticationTokenException'
+                  - $ref: '#/components/responses/AuthenticationTokenMissingException'
+        500:
+          $ref: '#/components/responses/DBException'
+        403:
+          $ref: '#/components/responses/UnauthorizedToViewActivityException'
+        404:
+          $ref: '#/components/responses/ActivityNotFoundException'
+    patch:
+      tags:
+      - activitylog
+      summary: Change a single activity
+      parameters:
+        - in: path
+          name: activityId
+          schema:
+            type: string
+          required: true
+          description: An activities unique ID
+      requestBody:
+        description: A modified activity object
+        content:
+          application/json:
+           schema:
+             $ref: '#/components/schemas/ActivityLogObject'
+        required: false
+      responses:
+        200:
+          description: Updated activity object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivityLog'
+        401:
+          description: The authentication token is either invalid or is missing
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/WrongAuthenticationTokenException'
+                  - $ref: '#/components/responses/AuthenticationTokenMissingException'
+        500:
+          $ref: '#/components/responses/DBException'
+        403:
+          $ref: '#/components/responses/UnauthorizedToViewActivityException'
+        404:
+          $ref: '#/components/responses/ActivityNotFoundException'
+        400:
+          description: Validation error, no such activity type, or the endDate was earlier than the startDate
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/ActivityTypeNotFoundException'
+                  - $ref: '#/components/responses/ValidationError'
+                  - $ref: '#/components/responses/InvalidActivityTimesException'
+  /activitytypes:
+    get:
+      tags:
+      - activitytypes
+      summary: Get all available activity types
+      security: []
+      responses:
+        200:
+          description: An array of available activity types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActivityType'
+        500:
+          $ref: '#/components/responses/DBException'
+  /activitytypes/{activityTypeId}:
+    get:
+      tags:
+      - activitytypes
+      summary: Get a single activity type specified by ID
+      parameters:
+        - in: path
+          name: activityTypeId
+          schema:
+            type: string
+          required: true
+          description: An activity type's unique ID
+      security: []
+      responses:
+        200:
+          description: Activity type object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivityType'
+        404:
+          $ref: '#/components/responses/ActivityTypeNotFoundException'
+        500:
+          $ref: '#/components/responses/DBException'
+components:
+  responses:
+    ActivityNotFoundException:
+      description: The specified activity was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HttpException'
+    ActivityTypeNotFoundException:
+      description: The specified activity type was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HttpException'
+    AuthenticationTokenMissingException:
+      description: Authentication token missing
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HttpException'
+    ClassNotFoundException:
+      description: The specified class ID was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HttpException'
+    DBException:
+      description: Internal error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HttpException'
+    InvalidActivityTimesException:
+      description: Invalid activity times
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HttpException'
+    NoSuchClassException:
+      description: No class identified by a readable id was found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HttpException'
+    UnauthorizedToViewActivityException:
+      description: Unauthorized to view activity with specified id
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HttpException'
+    UnauthorizedToViewClassException:
+      description: Unauthorized to view class with specified id
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HttpException'
+    UnauthorizedToViewUserException:
+      description: Unauthorized to view user with specified id
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HttpException'
+    UserNotFoundException:
+      description: The specified user was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HttpException'
+    UserNotTeacherException:
+      description: Only a teacher is authorized to view this resource
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HttpException'
+    UserWithThatEmailAlreadyExistsException:
+      description: A user with specified email already exists
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HttpException'
+    WrongAuthenticationTokenException:
+      description: Wrong authentication token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HttpException'
+    WrongCredentialsException:
+      description: Wrong credentials provided
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HttpException'
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HttpException'
+  schemas:
+    HttpException:
+      type: object
+      properties:
+        status:
+          type: number
+          description: HTTP status
+        message:
+          type: string
+          description: Exception message
+      required:
+        - status
+        - message
+    ActivityType:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Activity type's name
+          example: kolarstwo
+        kcalPerHour:
+          type: number
+          description: KCal burned per hour on activity type
+          example: 300
+        _id:
+          type: string
+          description: Activity type's unique ID
+          example: 601bd55f22c26a2ef9298df3
+    ActivityLog:
+      type: object
+      properties:
+        startDate:
+          type: string
+          description: Activity beggining date
+          example: '2001-01-04T23:00:00.000Z'
+        _id:
+          type: string
+          description: Activities ID
+          example: 601bd55f22c26a2ef9298df3
+        endDate:
+          type: string
+          description: Activity end date
+          example: '2001-01-04T23:00:00.000Z'
+        activityType_id:
+          type: string
+          description: The ID of corresponding activity type
+          example: 601bd55f22c26a2ef9298df3
+      required:
+        - startDate
+        - _id
+        - activityType_id
+    ActivityLogObject:
+      type: object
+      properties:
+        startDate:
+          type: string
+          description: Activity beggining date
+          example: '2001-01-04T23:00:00.000Z'
+        endDate:
+          type: string
+          description: Activity end date
+          example: '2001-01-04T23:00:00.000Z'
+        activityType_id:
+          type: string
+          description: The ID of corresponding activity type
+          example: 601bd55f22c26a2ef9298df3
+      required:
+        - activityType_id
+    BasicUserInfo:
+      type: object
+      properties:
+        class_ids:
+          type: array
+          items:
+            type: string
+            description: IDs of classes the user belongs to
+            example: 601bd55f22c26a2ef9298df3
+        _id:
+          type: string
+          description: User's ID
+          example: 601be28e50364b654dec42cf
+        isActive:
+          type: boolean
+          description: Was the user's account active
+          example: true
+        isTeacher:
+          type: boolean
+          description: Is the user a teacher
+          example: false
+        name:
+          type: string
+          description: User's name
+          example: James
+        surname:
+          type: string
+          description: User's surname
+          example: Smith
+      required:
+        - class_ids
+        - _id
+        - isActive
+        - isTeacher
+        - name
+        - surname
+    TeachersUserInfo:
+      allOf:
+        - $ref: '#/components/schemas/BasicUserInfo'
+        - type: object
+          properties:
+            activityLog_ids:
+              type: array
+              items:
+                type: string
+                description: IDs of activities the user performed
+                example: 601bef6a25c8480b19dd54cd
+    PrivateUserInfo:
+      allOf:
+        - $ref: '#/components/schemas/TeachersUserInfo'
+        - type: object
+          properties:
+            email:
+              type: string
+              description: User's email address
+              example: email@example.com
+            birthDate:
+              type: string
+              description: User's date of birth
+              example: '2001-01-04T23:00:00.000Z'
+            dateCreated:
+              type: string
+              description: The date of account's creation
+              example: "2021-02-04T12:03:26.000Z"
+            height:
+              type: number
+              description: User's height
+              example: 182
+            weight:
+              type: number
+              description: User's weight
+              example: 60
+          required:
+            - email
+            - dateCreated
+    TokenObject:
+      type: string
+      description: Authorization JWT token
+      example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MDFiZTI4ZTUwMzY0YjY1NGRlYzQyY2YiLCJpYXQiOjE2MTMxMjQyMTksImV4cCI6MTYxMzcyOTAxOX0.FC_DqIJewnn01qL3LdYumNaiLY8W5yEmAhQ7ahkbGqw
+    LoginData:
+      type: object
+      properties:
+        email:
+          type: string
+          description: User's email
+          example: email@example.com
+        password:
+          type: string
+          description: User's password
+          example: qwerty2137
+      required:
+        - email
+        - password
+    RegistrationData:
+      allOf:
+        - $ref: '#/components/schemas/LoginData'
+        - type: object
+          properties:
+            name:
+              type: string
+              description: User's name
+              example: James
+            surname:
+              type: string
+              description: User's surname
+              example: Smith
+            classId:
+              type: string
+              description: Unique human-readable identifier of a class
+              example: dzikie-węże
+            birthDate:
+              type: string
+              description: User's birth date
+              example: '2001-01-04T23:00:00.000Z'
+            height:
+              type: number
+              description: User's height
+              example: 180
+            weight:
+              type: number
+              description: User's weight
+              example: 60
+            isTeacher:
+              type: boolean
+              description: Is user a teacher
+              example: false
+          required:
+            - name
+            - surname
+            - classId
+    ClassObject:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Id of the class
+          example: 601bd55f22c26a2ef9298df3
+        name:
+          type: string
+          description: Name of the class
+          example: 4TB
+        isActive:
+          type: boolean
+          description: Is the class active
+          example: true
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    tokenInQuery:
+      type: apiKey
+      in: query
+      name: token
+    tokenInCookie:
+      type: apiKey
+      in: cookie
+      name: token

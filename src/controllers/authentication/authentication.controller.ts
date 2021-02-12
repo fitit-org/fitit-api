@@ -64,9 +64,7 @@ class AuthenticationController implements Controller {
         };
         const user = await this.user.create(userObject);
         user.hashedPassword = undefined;
-        const tokenData = this.createToken(user);
-        response.setHeader('authorization', tokenData.token);
-        response.send({ ...user, token: tokenData.token });
+        response.send(user);
       } else {
         next(new NoSuchClassException(userData.classId));
       }
@@ -90,7 +88,7 @@ class AuthenticationController implements Controller {
       if (isPasswordMatching) {
         user.hashedPassword = undefined;
         const tokenData = this.createToken(user);
-        response.send({ ...user, token: tokenData.token });
+        response.send({ user, token: tokenData.token });
       } else {
         next(new WrongCredentialsException());
       }

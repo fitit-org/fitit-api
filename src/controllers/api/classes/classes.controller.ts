@@ -32,6 +32,7 @@ class ClassesController implements Controller {
       authMiddleware,
       this.getClassUsers
     );
+    this.router.get(`${this.path}/:id/code`, authMiddleware, this.genClassCode);
   }
 
   private getAllClasses = async (
@@ -77,18 +78,26 @@ class ClassesController implements Controller {
       if (classObject) {
         if (request.user.class_ids.includes(classObject._id)) {
           try {
-            const users = await this.user
-              .find({ class_ids: classObject._id })
-              .populate({
-                path: 'activityLog_ids',
-                populate: {
-                  path: 'activityType_id',
-                },
-              })
-              .select(
-                'name surname activityLog_ids isActive isTeacher birthDate height weight'
-              )
-              .exec();
+            let users;
+            if (request.user.isTeacher) {
+              users = await this.user
+                .find({ class_ids: classObject._id })
+                .populate({
+                  path: 'activityLog_ids',
+                  populate: {
+                    path: 'activityType_id',
+                  },
+                })
+                .select(
+                  'name surname class_ids activityLog_ids isActive isTeacher'
+                )
+                .exec();
+            } else {
+              users = await this.user
+                .find({ class_ids: classObject._id })
+                .select('name surname class_ids isActive isTeacher')
+                .exec();
+            }
             response.send(users);
           } catch (error) {
             console.log(error.stack);

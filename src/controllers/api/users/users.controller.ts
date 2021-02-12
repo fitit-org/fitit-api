@@ -9,7 +9,6 @@ import DBException from '../../../exceptions/DBException';
 import UserDto from './user.dto';
 import validationMiddleware from '../../../middleware/validation.middleware';
 import UserNotFoundException from '../../../exceptions/UserNotFoundException';
-import UserNotTeacherException from '../../../exceptions/UserNotTeacherException';
 import UnauthorizedToViewUserException from '../../../exceptions/UnauthorizedToViewClassException';
 
 class UsersController {
@@ -97,11 +96,11 @@ class UsersController {
             next(new DBException());
           }
         } else {
-          if (request.user.isTeacher) {
-            const overlapArray = request.user.class_ids.filter((classId) =>
-              user.class_ids.includes(classId)
-            );
-            if (overlapArray.length > 0) {
+          const overlapArray = request.user.class_ids.filter((classId) =>
+            user.class_ids.includes(classId)
+          );
+          if (overlapArray.length > 0) {
+            if (user.isTeacher) {
               try {
                 const returnableUser = await this.user
                   .findById(request.user._id)
@@ -113,7 +112,7 @@ class UsersController {
                   })
                   .populate('class_ids')
                   .select(
-                    'name surname dateCreated weight height activityLog_ids class_ids isActive isTeacher'
+                    'name surname activityLog_ids class_ids isActive isTeacher'
                   )
                   .exec();
                 response.send(returnableUser);
@@ -122,10 +121,20 @@ class UsersController {
                 next(new DBException());
               }
             } else {
-              next(new UnauthorizedToViewUserException(request.params.id));
+              try {
+                const returnableUser = await this.user
+                  .findById(request.user._id)
+                  .populate('class_ids')
+                  .select('name surname class_ids isActive isTeacher')
+                  .exec();
+                response.send(returnableUser);
+              } catch (error) {
+                console.log(error.stack);
+                next(new DBException());
+              }
             }
           } else {
-            next(new UserNotTeacherException());
+            next(new UnauthorizedToViewUserException(request.params.id));
           }
         }
       } else {

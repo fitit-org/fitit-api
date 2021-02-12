@@ -161,6 +161,14 @@ class ActivityLogsController implements Controller {
       if (activity) {
         if (request.user.activityLog_ids.includes(request.params.id)) {
           const objectToUpdate = { ...activity, activityObject };
+          const foundActivityType = await this.activityType
+            .findById(objectToUpdate.activityType_id)
+            .exec();
+          if (!foundActivityType) {
+            next(
+              new ActivityTypeNotFoundException(objectToUpdate.activityType_id)
+            );
+          }
           if (
             objectToUpdate.endDate &&
             objectToUpdate.endDate < objectToUpdate.startDate

@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import Controller from '../../../types/controller.interface';
 import activityTypeModel from './activityType.model';
 import ActivityTypeNotFoundException from '../../../exceptions/ActivityTypeNotFoundException';
+import DBException from '../../../exceptions/DBException';
 
 class ActivityTypesController implements Controller {
   public path = '/activitytypes';
@@ -19,10 +20,16 @@ class ActivityTypesController implements Controller {
 
   private getAllActivityTypes = async (
     request: Request,
-    response: Response
+    response: Response,
+    next: NextFunction
   ) => {
-    const allActivities = await this.activityType.find();
-    response.send(allActivities);
+    try {
+      const allActivities = await this.activityType.find();
+      response.send(allActivities);
+    } catch (error) {
+      console.log(error.stack);
+      next(new DBException());
+    }
   };
 
   private getActivityTypeById = async (
@@ -31,11 +38,16 @@ class ActivityTypesController implements Controller {
     next: NextFunction
   ) => {
     const id = request.params.id;
-    const activityType = await this.activityType.findById(id);
-    if (activityType) {
-      response.send(activityType);
-    } else {
-      next(new ActivityTypeNotFoundException(id));
+    try {
+      const activityType = await this.activityType.findById(id);
+      if (activityType) {
+        response.send(activityType);
+      } else {
+        next(new ActivityTypeNotFoundException(id));
+      }
+    } catch (error) {
+      console.log(error.stack);
+      next(new DBException());
     }
   };
 }
