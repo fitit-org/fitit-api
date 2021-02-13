@@ -2,7 +2,7 @@
 
 name=fitit-api
 cfgfile=/etc/fitit-api.env
-command="node NODE_ENV=production dotenv_config_path=/etc/fitit-api.env /usr/local/bin/fitit-api/server.js"
+command="NODE_ENV=production NODE_PATH=/usr/local/lib/fitit-api/node_modules DOTENV_CONFIG_PATH=/etc/fitit-api.env node /usr/local/bin/fitit-api/server.js"
 pidfile="/run/fitit-api.pid"
 command_background="yes"
 
