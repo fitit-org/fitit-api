@@ -1,14 +1,22 @@
-import { cleanEnv, port, str } from 'envalid';
+import { cleanEnv, port, str, ValidatorSpec } from 'envalid';
 
 function validateEnv(): void {
-  cleanEnv(process.env, {
+  let validationObj: { [x: string]: ValidatorSpec<unknown> } = {
     MONGO_PASSWORD: str(),
     MONGO_PATH: str(),
     MONGO_USER: str(),
     PORT: port(),
-    ENV: str(),
     JWT_SECRET: str(),
-  });
+  };
+  if (process.env.NODE_ENV === 'production') {
+    validationObj = {
+      ...validationObj,
+      KEY_PATH: str(),
+      CERT_PATH: str(),
+      CA_PATH: str(),
+    };
+  }
+  cleanEnv(process.env, validationObj);
 }
 
 export default validateEnv;
