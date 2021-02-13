@@ -24,3 +24,12 @@ jobs:
           eslint ./src
       - name: Build
         run: tsc
+      - name: Deploy
+        uses: easingthemes/ssh-deploy@v2.1.4
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_KEY }}
+          REMOTE_HOST: ${{ secrets.DEPLOY_HOST }}
+          REMOTE_USER: ${{ secrets.DEPLOY_USER }}
+          REMOTE_PORT: ${{ secrets.DEPLOY_PORT }}
+          SOURCE: 'dist/'
+          TARGET: ${{ secrets.DEPLOY_TARGET }}

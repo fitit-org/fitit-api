@@ -38,6 +38,9 @@ class App {
     controllers.forEach((controller) => {
       this.app.use('/', controller.router);
     });
+    this.app.get('/', function (req: Request, res: Response) {
+      res.redirect('/docs');
+    });
   }
 
   private initializeErrorHandling() {
