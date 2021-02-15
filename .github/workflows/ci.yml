@@ -33,3 +33,29 @@ jobs:
           REMOTE_PORT: ${{ secrets.DEPLOY_PORT }}
           SOURCE: 'dist/'
           TARGET: ${{ secrets.DEPLOY_TARGET }}
+      - name: Deploy dependencies
+        uses: easingthemes/ssh-deploy@v2.1.4
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_KEY }}
+          REMOTE_HOST: ${{ secrets.DEPLOY_HOST }}
+          REMOTE_USER: ${{ secrets.DEPLOY_USER }}
+          REMOTE_PORT: ${{ secrets.DEPLOY_PORT }}
+          SOURCE: 'package*.json'
+          TARGET: ${{ secrets.DEPLOY_TARGET_LIB }}
+      - name: Deploy init script
+        uses: easingthemes/ssh-deploy@v2.1.4
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_KEY }}
+          REMOTE_HOST: ${{ secrets.DEPLOY_HOST }}
+          REMOTE_USER: ${{ secrets.DEPLOY_USER }}
+          REMOTE_PORT: ${{ secrets.DEPLOY_PORT }}
+          SOURCE: 'scripts/alpine-init/fitit-api'
+          TARGET: ${{ secrets.DEPLOY_TARGET_INIT }}
+      - name: Install dependencies on server and restart service
+        uses: garygrossgarten/github-action-ssh@release
+        with:
+          command: cd ${{ secrets.DEPLOY_TARGET_LIB }}; NODE_ENV=production npm install && sudo chmod a+x ${{ secrets.DEPLOY_TARGET_INIT }}/fitit-api && sudo rc-service fitit-api restart
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          privateKey: ${{ secrets.DEPLOY_KEY }}
+          port: ${{ secrets.DEPLOY_PORT }}
