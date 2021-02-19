@@ -1,24 +1,21 @@
 import Controller from '../../../types/controller.interface';
-import { Router, Response, Request, NextFunction } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import RequestWithUser from '../../../types/requestWithUser.interface';
 import authMiddleware from '../../../middleware/auth.middleware';
-import classModel from './class.model';
-import userModel from '../users/user.model';
-import activityLogModel from '../activityLogs/activityLog.model';
-import activityTypeModel from '../activityTypes/activityType.model';
 import ClassNotFoundException from '../../../exceptions/ClassNotFoundException';
 import UnauthorizedToViewClassException from '../../../exceptions/UnauthorizedToViewClassException';
 import DBException from '../../../exceptions/DBException';
 import UserNotTeacherException from '../../../exceptions/UserNotTeacherException';
 import { getHR } from 'reversible-human-readable-id';
+import Class from '../../../types/class.interface';
+import User from '../../../types/user.interface';
+import { populateUser } from '../../../utils/db';
+import { MongoHelper } from '../../../utils/mongo.helper';
+import { ObjectId } from 'bson';
 
 class ClassesController implements Controller {
   public path = '/classes';
   public router = Router();
-  private class = classModel;
-  private user = userModel;
-  private activityLog = activityLogModel;
-  private activityType = activityTypeModel;
 
   constructor() {
     this.initializeRoutes();
@@ -36,12 +33,15 @@ class ClassesController implements Controller {
   }
 
   private getAllClasses = async (
-    request: Request,
+    request: RequestWithUser,
     response: Response,
     next: NextFunction
   ) => {
     try {
-      const classes = await this.class.find().exec();
+      const classes = (await (await MongoHelper.getDB())
+        .collection('classes')
+        .find({})
+        .toArray()) as Array<Class>;
       response.send(classes);
     } catch (error) {
       console.log(error.stack);
@@ -50,17 +50,20 @@ class ClassesController implements Controller {
   };
 
   private getClassById = async (
-    request: Request,
+    request: RequestWithUser,
     response: Response,
     next: NextFunction
   ) => {
-    const id = request.params.id;
     try {
-      const classObject = await this.class.findById(id).exec();
+      const classObject = (await (await MongoHelper.getDB())
+        .collection('classes')
+        .findOne({
+          _id: request.params.id,
+        })) as Class;
       if (classObject) {
         response.send(classObject);
       } else {
-        next(new ClassNotFoundException(id));
+        next(new ClassNotFoundException(request.params.id));
       }
     } catch (error) {
       console.log(error.stack);
@@ -74,35 +77,40 @@ class ClassesController implements Controller {
     next: NextFunction
   ) => {
     try {
-      const classObject = await this.class.findById(request.params.id).exec();
+      const classObject = (await (await MongoHelper.getDB())
+        .collection('classes')
+        .findOne({
+          _id: request.params.id,
+        })) as Class;
       if (classObject) {
-        if (request.user.class_ids.includes(classObject._id)) {
-          try {
-            let users;
-            if (request.user.isTeacher) {
-              users = await this.user
-                .find({ class_ids: classObject._id })
-                .populate({
-                  path: 'activityLog_ids',
-                  populate: {
-                    path: 'activityType_id',
-                  },
-                })
-                .select(
-                  'name surname class_ids activityLog_ids isActive isTeacher'
-                )
-                .exec();
-            } else {
-              users = await this.user
-                .find({ class_ids: classObject._id })
-                .select('name surname class_ids isActive isTeacher')
-                .exec();
+        if (
+          (request.user.class_ids as Array<ObjectId>).includes(classObject._id)
+        ) {
+          const users = (await (await MongoHelper.getDB())
+            .collection('users')
+            .find(
+              { class_ids: classObject._id },
+              {
+                projection: {
+                  hashedPassword: 0,
+                  email: 0,
+                  birthDate: 0,
+                  weight: 0,
+                  height: 0,
+                },
+              }
+            )
+            .toArray()) as Array<User>;
+          if (request.user.isTeacher) {
+            for (let user of users) {
+              user = await populateUser(await MongoHelper.getDB(), user, false);
             }
-            response.send(users);
-          } catch (error) {
-            console.log(error.stack);
-            next(new DBException());
+          } else {
+            users.forEach((user) => {
+              delete user.activityLog_ids;
+            });
           }
+          response.send(users);
         } else {
           next(new UnauthorizedToViewClassException(request.params.id));
         }
@@ -121,11 +129,17 @@ class ClassesController implements Controller {
     next: NextFunction
   ) => {
     try {
-      const classObject = await this.class.findById(request.params.id).exec();
+      const classObject = (await (await MongoHelper.getDB())
+        .collection('classes')
+        .findOne({
+          _id: request.params.id,
+        })) as Class;
       if (classObject) {
-        if (request.user.class_ids.includes(classObject._id)) {
+        if (
+          (request.user.class_ids as Array<ObjectId>).includes(classObject._id)
+        ) {
           if (request.user.isTeacher) {
-            const classIdHash = { code: getHR(classObject._id) };
+            const classIdHash = { code: getHR(classObject._id.toHexString()) };
             response.send(classIdHash);
           } else {
             next(new UserNotTeacherException());

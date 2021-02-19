@@ -4,13 +4,15 @@ import AuthenticationController from './controllers/authentication/authenticatio
 import DocsController from './controllers/docs/docs.controller';
 import 'dotenv/config';
 import validateEnv from './utils/validateEnv';
+import { MongoHelper } from './utils/mongo.helper';
 
 validateEnv();
-
-const app = new App([
-  new ApiController(),
-  new AuthenticationController(),
-  new DocsController(),
-]);
-
-app.listen();
+MongoHelper.connect().then(() => {
+  console.log('Connected to database');
+  const app = new App([
+    new ApiController(),
+    new AuthenticationController(),
+    new DocsController(),
+  ]);
+  app.listen();
+});

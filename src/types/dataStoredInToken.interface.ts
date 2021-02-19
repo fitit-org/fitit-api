@@ -1,5 +1,7 @@
+import { ObjectId } from 'bson';
+
 interface DataStoredInToken {
-  _id: string;
+  _id: ObjectId;
 }
 
 export default DataStoredInToken;

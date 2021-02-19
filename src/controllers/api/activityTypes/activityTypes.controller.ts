@@ -1,13 +1,14 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import Controller from '../../../types/controller.interface';
-import activityTypeModel from './activityType.model';
 import ActivityTypeNotFoundException from '../../../exceptions/ActivityTypeNotFoundException';
 import DBException from '../../../exceptions/DBException';
+import ActivityType from '../../../types/activityType.interface';
+import { MongoHelper } from '../../../utils/mongo.helper';
+import { ObjectId } from 'bson';
 
 class ActivityTypesController implements Controller {
   public path = '/activitytypes';
   public router = Router();
-  private activityType = activityTypeModel;
 
   constructor() {
     this.initializeRoutes();
@@ -24,11 +25,14 @@ class ActivityTypesController implements Controller {
     next: NextFunction
   ) => {
     try {
-      const allActivities = await this.activityType.find();
-      response.send(allActivities);
+      const allActivities = (await (await MongoHelper.getDB())
+        .collection('activityTypes')
+        .find({})
+        .toArray()) as Array<ActivityType>;
+      return response.send(allActivities);
     } catch (error) {
       console.log(error.stack);
-      next(new DBException());
+      return next(new DBException());
     }
   };
 
@@ -37,14 +41,19 @@ class ActivityTypesController implements Controller {
     response: Response,
     next: NextFunction
   ) => {
-    const id = request.params.id;
     try {
-      const activityType = await this.activityType.findById(id);
-      if (activityType) {
-        response.send(activityType);
-      } else {
-        next(new ActivityTypeNotFoundException(id));
+      if (!ObjectId.isValid(request.params.id)) {
+        return next(new ActivityTypeNotFoundException(request.params.id));
       }
+      const activityType = (await (await MongoHelper.getDB())
+        .collection('activityTypes')
+        .findOne({
+          _id: new ObjectId(request.params.id),
+        })) as ActivityType;
+      if (!activityType) {
+        return next(new ActivityTypeNotFoundException(request.params.id));
+      }
+      return response.send(activityType);
     } catch (error) {
       console.log(error.stack);
       next(new DBException());

@@ -1,9 +1,8 @@
 import {
   IsOptional,
   IsEmail,
-  IsDate,
+  IsDateString,
   IsNumber,
-  IsBoolean,
   IsString,
   Matches,
   MinLength,
@@ -37,13 +36,9 @@ class CreateUserDto {
   public email: string;
 
   @IsOptional()
-  @IsDate()
+  @IsDateString()
   @MaxDate(new Date())
-  public birthDate?: Date;
-
-  @IsOptional()
-  @IsBoolean()
-  public isTeacher?: boolean;
+  public birthDate?: string;
 
   @IsOptional()
   @IsNumber()

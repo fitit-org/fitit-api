@@ -1,25 +1,24 @@
 import Controller from '../../../types/controller.interface';
 import { Router, Response, NextFunction } from 'express';
 import RequestWithUser from '../../../types/requestWithUser.interface';
-import activityLogModel from './activityLog.model';
-import activityTypeModel from '../activityTypes/activityType.model';
-import userModel from '../users/user.model';
 import DBException from '../../../exceptions/DBException';
 import authMiddleware from '../../../middleware/auth.middleware';
 import ActivityNotFoundException from '../../../exceptions/ActivityNotFoundException';
 import UnauthorizedToViewActivityException from '../../../exceptions/UnauthorizedToViewActivityException';
 import AddActivityDto from './activityLog.dto';
-import ActivityTypeNotFoundException from '../../../exceptions/ActivityTypeNotFoundException';
 import InvalidActivityTimesException from '../../../exceptions/InvalidActivityTimesException';
 import validationMiddleware from '../../../middleware/validation.middleware';
+import ActivityLog from '../../../types/activityLog.interface';
+import User from '../../../types/user.interface';
+import { populateActivities, populateActivity } from '../../../utils/db';
+import { MongoHelper } from '../../../utils/mongo.helper';
+import { ObjectId } from 'bson';
+import NoSuchActivityTypeException from '../../../exceptions/NoSuchActivityTypeException';
+import { FilterQuery } from 'mongodb';
 
 class ActivityLogsController implements Controller {
   public path = '/activitylog';
   public router = Router();
-
-  private activityLog = activityLogModel;
-  private activityType = activityTypeModel;
-  private user = userModel;
 
   constructor() {
     this.initializeRoutes();
@@ -47,27 +46,25 @@ class ActivityLogsController implements Controller {
     response: Response,
     next: NextFunction
   ) => {
-    const onlyUnfinished = Boolean(request.query.unfinished);
     try {
-      if (onlyUnfinished) {
-        const onlyUnfinished = await this.activityLog
-          .find({
-            _id: request.user.activityLog_ids,
-            endDate: { $exists: false },
-          })
-          .populate('activityType_id')
-          .exec();
-        response.send(onlyUnfinished);
-      } else {
-        const activities = await this.activityLog
-          .findById(request.user.activityLog_ids)
-          .populate('activityType_id')
-          .exec();
-        response.send(activities);
+      const query: FilterQuery<unknown> = {
+        _id: { $in: request.user.activityLog_ids },
+      };
+      if (Boolean(request.query.unfinished)) {
+        query.endDate = { $exists: false };
       }
+      let activities = (await (await MongoHelper.getDB())
+        .collection('activityLogs')
+        .find(query)
+        .toArray()) as Array<ActivityLog>;
+      activities = await populateActivities(
+        await MongoHelper.getDB(),
+        activities
+      );
+      return response.send(activities);
     } catch (error) {
       console.log(error.stack);
-      next(new DBException());
+      return next(new DBException());
     }
   };
 
@@ -77,36 +74,56 @@ class ActivityLogsController implements Controller {
     next: NextFunction
   ) => {
     try {
-      const activity = await this.activityLog
-        .findById(request.params.id)
-        .populate('activityType_id')
-        .exec();
-      const user = await this.user
-        .findOne({ activityLog_ids: activity._id })
-        .exec();
-      if (activity && user) {
-        if (request.user.isTeacher) {
-          const overlapArray = request.user.class_ids.filter((classId) =>
-            user.class_ids.includes(classId)
-          );
-          if (overlapArray.length > 0) {
-            response.send(activity);
-          } else {
-            next(new UnauthorizedToViewActivityException(request.params.id));
-          }
-        } else {
-          if (request.user.activityLog_ids.includes(activity._id)) {
-            response.send(activity);
-          } else {
-            next(new UnauthorizedToViewActivityException(request.params.id));
+      if (!ObjectId.isValid(request.params.id)) {
+        return next(new ActivityNotFoundException(request.params.id));
+      }
+      let activity = (await (await MongoHelper.getDB())
+        .collection('activityLogs')
+        .findOne({
+          _id: new ObjectId(request.params.id),
+        })) as ActivityLog;
+      if (!activity) {
+        return next(new ActivityNotFoundException(request.params.id));
+      }
+      if (request.user.isTeacher) {
+        const activityUser = (await (await MongoHelper.getDB())
+          .collection('users')
+          .findOne({
+            activityLog_ids: activity._id,
+          })) as User;
+        let hasOverlap = false;
+        for (const teacherClassId of request.user
+          .class_ids as Array<ObjectId>) {
+          for (const userClassId of activityUser.class_ids as Array<ObjectId>) {
+            if (teacherClassId.equals(userClassId)) {
+              hasOverlap = true;
+              break;
+            }
           }
         }
-      } else {
-        next(new ActivityNotFoundException(request.params.id));
+        if (!hasOverlap) {
+          return next(
+            new UnauthorizedToViewActivityException(request.params.id)
+          );
+        }
+        activity = await populateActivity(await MongoHelper.getDB(), activity);
+        return response.send(activity);
       }
+      let hasActivity = false;
+      for (const id of request.user.activityLog_ids as Array<ObjectId>) {
+        if (id.equals(activity._id)) {
+          hasActivity = true;
+          break;
+        }
+      }
+      if (!hasActivity) {
+        return next(new UnauthorizedToViewActivityException(request.params.id));
+      }
+      activity = await populateActivity(await MongoHelper.getDB(), activity);
+      return response.send(activity);
     } catch (error) {
       console.log(error.stack);
-      next(new DBException());
+      return next(new DBException());
     }
   };
 
@@ -117,34 +134,52 @@ class ActivityLogsController implements Controller {
   ) => {
     const activityObject: AddActivityDto = request.body;
     try {
-      const activityType = await this.activityType
-        .findById(activityObject.activityType_id)
-        .exec();
-      if (activityType) {
-        if (activityObject.startDate === undefined) {
-          activityObject.startDate = new Date();
-        }
-        if (
-          activityObject.endDate &&
-          activityObject.endDate < activityObject.startDate
-        ) {
-          next(new InvalidActivityTimesException());
-        }
-        const activityDBObject = new this.activityLog(activityObject);
-        const createdActivity = await activityDBObject.save();
-        await this.user.findByIdAndUpdate(request.user._id, {
-          activityLog_ids: [
-            ...request.user.activityLog_ids,
-            createdActivity._id,
-          ],
-        });
-        response.send(createdActivity);
-      } else {
-        next(new ActivityTypeNotFoundException(activityObject.activityType_id));
+      const activityTypeCount = await (await MongoHelper.getDB())
+        .collection('activityTypes')
+        .find({
+          _id: new ObjectId(activityObject.activityType_id),
+        })
+        .count();
+      if (activityTypeCount === 0) {
+        return next(
+          new NoSuchActivityTypeException(activityObject.activityType_id)
+        );
       }
+      const activityInsertObject: Record<string, unknown> = {};
+      activityInsertObject.activityType_id = new ObjectId(
+        activityObject.activityType_id
+      );
+      activityInsertObject.startDate = activityObject.startDate
+        ? new Date(activityObject.startDate)
+        : new Date();
+      if (activityObject.endDate) {
+        activityInsertObject.endDate = new Date(activityObject.endDate);
+        if (activityInsertObject.endDate < activityInsertObject.startDate) {
+          return next(new InvalidActivityTimesException());
+        }
+      }
+      const insertResult = await (await MongoHelper.getDB())
+        .collection('activityLogs')
+        .insertOne(activityInsertObject);
+      await (await MongoHelper.getDB()).collection('users').updateOne(
+        { _id: request.user._id },
+        {
+          $push: { activityLog_ids: insertResult.insertedId },
+        }
+      );
+      let createdActivity = (await (await MongoHelper.getDB())
+        .collection('activityLogs')
+        .findOne({
+          _id: insertResult.insertedId,
+        })) as ActivityLog;
+      createdActivity = await populateActivity(
+        await MongoHelper.getDB(),
+        createdActivity
+      );
+      return response.status(201).send(createdActivity);
     } catch (error) {
       console.log(error.stack);
-      next(new DBException());
+      return next(new DBException());
     }
   };
 
@@ -155,39 +190,76 @@ class ActivityLogsController implements Controller {
   ) => {
     const activityObject: AddActivityDto = request.body;
     try {
-      const activity = await this.activityLog
-        .findById(request.params.id)
-        .exec();
-      if (activity) {
-        if (request.user.activityLog_ids.includes(request.params.id)) {
-          const objectToUpdate = { ...activity, activityObject };
-          const foundActivityType = await this.activityType
-            .findById(objectToUpdate.activityType_id)
-            .exec();
-          if (!foundActivityType) {
-            next(
-              new ActivityTypeNotFoundException(objectToUpdate.activityType_id)
-            );
-          }
-          if (
-            objectToUpdate.endDate &&
-            objectToUpdate.endDate < objectToUpdate.startDate
-          ) {
-            next(new InvalidActivityTimesException());
-          }
-          const updatedActivity = await this.activityLog
-            .findByIdAndUpdate(request.params.id, objectToUpdate, { new: true })
-            .exec();
-          response.send(updatedActivity);
-        } else {
-          next(new UnauthorizedToViewActivityException(request.params.id));
-        }
-      } else {
-        next(new ActivityNotFoundException(request.params.id));
+      if (!ObjectId.isValid(request.params.id)) {
+        return next(new ActivityNotFoundException(request.params.id));
       }
+      const paramId = new ObjectId(request.params.id);
+      const activity = (await (await MongoHelper.getDB())
+        .collection('activityLogs')
+        .findOne({
+          _id: paramId,
+        })) as ActivityLog;
+      if (!activity) {
+        return next(new ActivityNotFoundException(request.params.id));
+      }
+      let hasActivity = false;
+      if (request.user.activityLog_ids) {
+        for (const id of request.user.activityLog_ids as Array<ObjectId>) {
+          if (id.equals(new ObjectId(request.params.id))) {
+            hasActivity = true;
+            break;
+          }
+        }
+      }
+      if (!hasActivity) {
+        return next(new UnauthorizedToViewActivityException(request.params.id));
+      }
+      const mergedActivityUpdateObject: Record<string, unknown> = {};
+      if (activityObject.activityType_id) {
+        const activityTypeId = new ObjectId(activityObject.activityType_id);
+        const activityTypeLength = await (await MongoHelper.getDB())
+          .collection('activityTypes')
+          .find({
+            _id: activityTypeId,
+          })
+          .count();
+        if (activityTypeLength === 0) {
+          return next(
+            new NoSuchActivityTypeException(activityObject.activityType_id)
+          );
+        }
+        mergedActivityUpdateObject.activityType_id = activityTypeId;
+      }
+      mergedActivityUpdateObject.startDate = activityObject.startDate
+        ? new Date(activityObject.startDate)
+        : activity.startDate;
+      if (activityObject.endDate || activity.endDate) {
+        mergedActivityUpdateObject.endDate = activityObject.endDate
+          ? new Date(activityObject.endDate)
+          : activity.endDate;
+        if (
+          mergedActivityUpdateObject.endDate <
+          mergedActivityUpdateObject.startDate
+        ) {
+          return next(new InvalidActivityTimesException());
+        }
+      }
+      await (await MongoHelper.getDB())
+        .collection('activityLogs')
+        .updateOne({ _id: paramId }, { $set: mergedActivityUpdateObject });
+      let updatedActivity = (await (await MongoHelper.getDB())
+        .collection('activityLogs')
+        .findOne({
+          _id: paramId,
+        })) as ActivityLog;
+      updatedActivity = await populateActivity(
+        await MongoHelper.getDB(),
+        updatedActivity
+      );
+      return response.send(updatedActivity);
     } catch (error) {
       console.log(error.stack);
-      next(new DBException());
+      return next(new DBException());
     }
   };
 }

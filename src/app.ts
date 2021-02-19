@@ -3,8 +3,7 @@ import { json } from 'body-parser';
 import compression from 'compression';
 import helmet from 'helmet';
 import cors from 'cors';
-import mongoose from 'mongoose';
-import morgan from 'morgan';
+//import morgan from 'morgan';
 import Controller from './types/controller.interface';
 import errorMiddleware from './middleware/error.middleware';
 import { createServer, Server } from 'https';
@@ -17,8 +16,6 @@ class App {
 
   constructor(controllers: Array<Controller>) {
     this.app = express();
-
-    this.connectToDatabase();
     this.initializeMiddlewares();
     this.initializeControllers(controllers);
     this.initializeErrorHandling();
@@ -29,9 +26,9 @@ class App {
     this.app.use(cors());
     this.app.use(helmet());
     this.app.use(compression());
-    if (process.env.NODE_ENV !== 'production') {
+    /*if (process.env.NODE_ENV !== 'production') {
       this.app.use(morgan('combined'));
-    }
+    }*/
   }
 
   private initializeControllers(controllers: Array<Controller>) {
@@ -45,15 +42,6 @@ class App {
 
   private initializeErrorHandling() {
     this.app.use(errorMiddleware);
-  }
-
-  private connectToDatabase() {
-    const { MONGO_USER, MONGO_PASSWORD, MONGO_PATH } = process.env;
-    mongoose.connect(`mongodb://${MONGO_USER}:${MONGO_PASSWORD}${MONGO_PATH}`, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    mongoose.set('useCreateIndex', true);
   }
 
   private setupInsecureRedirects() {

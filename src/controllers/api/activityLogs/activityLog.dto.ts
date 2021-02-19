@@ -1,16 +1,16 @@
-import { IsMongoId, IsDate, IsOptional } from 'class-validator';
+import { IsMongoId, IsDateString, IsOptional } from 'class-validator';
 
 class AddActivityDto {
   @IsMongoId()
   public activityType_id: string;
 
-  @IsDate()
+  @IsDateString()
   @IsOptional()
-  public startDate?: Date;
+  public startDate?: string;
 
-  @IsDate()
+  @IsDateString()
   @IsOptional()
-  public endDate?: Date;
+  public endDate?: string;
 }
 
 export default AddActivityDto;

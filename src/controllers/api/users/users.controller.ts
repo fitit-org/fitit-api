@@ -1,24 +1,19 @@
 import { Router, Response, NextFunction } from 'express';
-import userModel from './user.model';
-import activityLogModel from '../activityLogs/activityLog.model';
-import activityTypeModel from '../activityTypes/activityType.model';
-import classModel from '../classes/class.model';
 import authMiddleware from '../../../middleware/auth.middleware';
 import RequestWithUser from '../../../types/requestWithUser.interface';
 import DBException from '../../../exceptions/DBException';
 import UserDto from './user.dto';
 import validationMiddleware from '../../../middleware/validation.middleware';
 import UserNotFoundException from '../../../exceptions/UserNotFoundException';
-import UnauthorizedToViewUserException from '../../../exceptions/UnauthorizedToViewClassException';
+import UnauthorizedToViewUserException from '../../../exceptions/UnauthorizedToViewUserException';
+import User from '../../../types/user.interface';
+import { populateUser } from '../../../utils/db';
+import { MongoHelper } from '../../../utils/mongo.helper';
+import { ObjectId } from 'bson';
 
 class UsersController {
   public path = '/user';
   public router = Router();
-
-  private user = userModel;
-  private activityLog = activityLogModel;
-  private activityType = activityTypeModel;
-  private class = classModel;
 
   constructor() {
     this.initializeRoutes();
@@ -42,28 +37,14 @@ class UsersController {
     next: NextFunction
   ) => {
     try {
-      const user = await this.user
-        .findById(request.user._id)
-        .populate({
-          path: 'activityLog_ids',
-          populate: {
-            path: 'activityType_id',
-          },
-        })
-        .populate('class_ids')
-        .select(
-          'name surname email birthDate dateCreated weight height activityLog_ids class_ids isActive isTeacher'
-        )
-        .exec();
-      if (user) {
-        response.send(user);
-      } else {
-        // TODO: Critical! Invalidate token here
-        next(new UserNotFoundException(request.user._id));
-      }
+      const userObject = await populateUser(
+        await MongoHelper.getDB(),
+        request.user
+      );
+      return response.send(userObject);
     } catch (error) {
       console.log(error.stack);
-      next(new DBException());
+      return next(new DBException());
     }
   };
 
@@ -73,76 +54,55 @@ class UsersController {
     next: NextFunction
   ) => {
     try {
-      const user = await this.user.findById(request.params._id).exec();
-      if (user) {
-        if (request.user._id === user._id) {
-          try {
-            const returnableUser = await this.user
-              .findById(request.user._id)
-              .populate({
-                path: 'activityLog_ids',
-                populate: {
-                  path: 'activityType_id',
-                },
-              })
-              .populate('class_ids')
-              .select(
-                'name surname email birthDate dateCreated weight height activityLog_ids class_ids isActive isTeacher'
-              )
-              .exec();
-            response.send(returnableUser);
-          } catch (error) {
-            console.log(error.stack);
-            next(new DBException());
-          }
-        } else {
-          const overlapArray = request.user.class_ids.filter((classId) =>
-            user.class_ids.includes(classId)
-          );
-          if (overlapArray.length > 0) {
-            if (user.isTeacher) {
-              try {
-                const returnableUser = await this.user
-                  .findById(request.user._id)
-                  .populate({
-                    path: 'activityLog_ids',
-                    populate: {
-                      path: 'activityType_id',
-                    },
-                  })
-                  .populate('class_ids')
-                  .select(
-                    'name surname activityLog_ids class_ids isActive isTeacher'
-                  )
-                  .exec();
-                response.send(returnableUser);
-              } catch (error) {
-                console.log(error.stack);
-                next(new DBException());
-              }
-            } else {
-              try {
-                const returnableUser = await this.user
-                  .findById(request.user._id)
-                  .populate('class_ids')
-                  .select('name surname class_ids isActive isTeacher')
-                  .exec();
-                response.send(returnableUser);
-              } catch (error) {
-                console.log(error.stack);
-                next(new DBException());
-              }
-            }
-          } else {
-            next(new UnauthorizedToViewUserException(request.params.id));
+      if (!ObjectId.isValid(request.params.id)) {
+        return next(new UserNotFoundException(request.params.id));
+      }
+      const userId = new ObjectId(request.params.id);
+      if (userId.equals(request.user._id)) {
+        const userObject = await populateUser(
+          await MongoHelper.getDB(),
+          request.user
+        );
+        return response.send(userObject);
+      }
+      const userCount = await (await MongoHelper.getDB())
+        .collection('users')
+        .find({
+          _id: userId,
+        })
+        .limit(1)
+        .count();
+      if (userCount === 0) {
+        return next(new UserNotFoundException(request.params.id));
+      }
+      const user = (await (await MongoHelper.getDB())
+        .collection('users')
+        .findOne({ _id: userId })) as User;
+      let hasOverlap = false;
+      for (const classId of user.class_ids as Array<ObjectId>) {
+        for (const userClassId of request.user.class_ids as Array<ObjectId>) {
+          if (classId.equals(userClassId)) {
+            hasOverlap = true;
+            break;
           }
         }
-      } else {
-        next(new UserNotFoundException(request.params._id));
       }
+      if (!hasOverlap) {
+        return next(new UnauthorizedToViewUserException(request.params.id));
+      }
+      const userObject = await populateUser(await MongoHelper.getDB(), user);
+      delete userObject.birthDate;
+      delete userObject.email;
+      delete userObject.hashedPassword;
+      delete userObject.height;
+      delete userObject.weight;
+      if (!request.user.isTeacher) {
+        delete userObject.activityLog_ids;
+      }
+      return response.send(userObject);
     } catch (error) {
       console.log(error.stack);
-      next(new DBException());
+      return next(new DBException());
     }
   };
 
@@ -153,13 +113,17 @@ class UsersController {
   ) => {
     const userData: UserDto = request.body;
     try {
-      const user = await this.user
-        .findByIdAndUpdate(request.user._id, userData, { new: true })
-        .select(
-          'name surname email birthDate dateCreated weight height isActive isTeacher'
-        )
-        .exec();
-      response.send(user);
+      await (await MongoHelper.getDB())
+        .collection('users')
+        .updateOne({ _id: request.user._id }, { $set: userData });
+      const user = (await (await MongoHelper.getDB())
+        .collection('users')
+        .findOne(
+          { _id: request.user._id },
+          { projection: { hashedPassword: 0 } }
+        )) as User;
+      const populatedUser = await populateUser(await MongoHelper.getDB(), user);
+      response.send(populatedUser);
     } catch (error) {
       console.log(error.stack);
       next(new DBException());
@@ -172,36 +136,28 @@ class UsersController {
     next: NextFunction
   ) => {
     try {
-      try {
-        const userActivities = await this.user
-          .findById(request.user._id)
-          .select('activityLog_ids -_id')
-          .exec();
-        let activityRemovalSuccess: unknown;
-        if (userActivities) {
-          activityRemovalSuccess = await this.activityLog
-            .findByIdAndDelete(userActivities)
-            .exec();
-        } else {
-          activityRemovalSuccess = true;
-        }
-        const userRemovalSuccess = await this.user.findByIdAndDelete(
-          request.user._id
-        );
-        if (activityRemovalSuccess && userRemovalSuccess) {
-          response.send(200);
-          // Client should remove the token here
-          // TODO: Invalidate the token server-side
-        } else {
-          next(new DBException());
-        }
-      } catch (error) {
-        console.log(error.stack);
-        next(new DBException());
+      if (request.user.activityLog_ids) {
+        await (await MongoHelper.getDB())
+          .collection('activityLogs')
+          .deleteMany({
+            _id: {
+              $in: request.user.activityLog_ids as Array<ObjectId>,
+            },
+          });
+      }
+      const userRemovalSuccess = await (await MongoHelper.getDB())
+        .collection('users')
+        .deleteOne({
+          _id: request.user._id,
+        });
+      if (userRemovalSuccess.deletedCount === 1) {
+        return response.status(204).send();
+      } else {
+        return next(new DBException());
       }
     } catch (error) {
       console.log(error.stack);
-      next(new DBException());
+      return next(new DBException());
     }
   };
 }

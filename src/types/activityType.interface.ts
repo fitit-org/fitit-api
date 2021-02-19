@@ -1,4 +1,6 @@
+import { ObjectId, Double } from 'bson';
+
 export default interface ActivityType {
-  name: string;
-  kcalPerHour: number;
+  name: ObjectId;
+  kcalPerHour: Double;
 }

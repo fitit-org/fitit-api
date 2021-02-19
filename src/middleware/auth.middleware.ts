@@ -1,11 +1,13 @@
 import { NextFunction, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import userModel from '../controllers/api/users/user.model';
+import User from '../types/user.interface';
 import RequestWithUser from '../types/requestWithUser.interface';
 import AuthenticationTokenMissingException from '../exceptions/AuthenticationTokenMissingException';
 import WrongAuthenticationTokenException from '../exceptions/WrongAuthenticationTokenException';
 import DataStoredInToken from '../types/dataStoredInToken.interface';
 import DBException from '../exceptions/DBException';
+import { MongoHelper } from '../utils/mongo.helper';
+import { ObjectId } from 'bson';
 
 async function authMiddleware(
   request: RequestWithUser,
@@ -22,12 +24,21 @@ async function authMiddleware(
       ) as DataStoredInToken;
       const id = verificationResponse._id;
       try {
-        const user = await userModel.findById(id).exec();
-        if (user) {
-          request.user = user;
-          next();
-        } else {
+        if (!ObjectId.isValid(id)) {
           next(new WrongAuthenticationTokenException());
+        } else {
+          const user = (await (await MongoHelper.getDB())
+            .collection('users')
+            .findOne(
+              { _id: new ObjectId(id) },
+              { projection: { hashedPassword: 0 } }
+            )) as User;
+          if (user) {
+            request.user = user;
+            next();
+          } else {
+            next(new WrongAuthenticationTokenException());
+          }
         }
       } catch (error) {
         console.log(error.stack);
