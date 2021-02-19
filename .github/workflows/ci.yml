@@ -25,7 +25,11 @@ jobs:
       - name: Build
         run: tsc
       - name: Test
-        run: npm test
+        run: |
+          touch .env
+          echo JWT_SECRET=${{ secrets.JWT_SECRET }} >> .env
+          echo PORT=3000 >> .env
+          npm test
       - name: Deploy
         uses: easingthemes/ssh-deploy@v2.1.4
         env:
