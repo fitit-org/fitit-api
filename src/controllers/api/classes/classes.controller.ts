@@ -282,7 +282,33 @@ class ClassesController implements Controller {
         { _id: request.user._id },
         { $push: { class_ids: classObj._id } }
       )
-      return this.getAllClasses
+      const classes = (await this.classes
+        .find(
+          {
+            _id: {
+              $in: request.user.class_ids as Array<ObjectId>,
+            },
+          },
+          { projection: { humanReadable: 0 } }
+        )
+        .toArray()) as Array<Class>
+      const users = (await this.users
+        .find(
+          {
+            class_ids: {
+              $in: request.user.class_ids,
+            },
+          },
+          {
+            projection: {
+              name: 1,
+              surname: 1,
+              isTeacher: 1,
+            },
+          }
+        )
+        .toArray()) as Array<User>
+      return response.status(201).send({ classes: classes, users: users })
     } catch (error) {
       console.log(error.stack)
       return next(new DBException())
@@ -336,7 +362,7 @@ class ClassesController implements Controller {
           }
         )
         .toArray()) as Array<User>
-      return response.status(204).send({ classes: classResponse, users: users })
+      return response.status(200).send({ class: classResponse, users: users })
     } catch (error) {
       console.log(error.stack)
       return next(new DBException())

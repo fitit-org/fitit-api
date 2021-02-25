@@ -73,7 +73,19 @@ class UsersController {
       if (userCount === 0) {
         return next(new UserNotFoundException(request.params.id))
       }
-      const user = (await this.users.findOne({ _id: userId })) as User
+      const user = (await this.users.findOne(
+        { _id: userId },
+        {
+          projection: {
+            name: 1,
+            surname: 1,
+            class_ids: 1,
+            activityLog_ids: 1,
+            isTeacher: 1,
+            isActive: 1,
+          },
+        }
+      )) as User
       let hasOverlap = false
       for (const classId of user.class_ids as Array<ObjectId>) {
         for (const userClassId of request.user.class_ids as Array<ObjectId>) {
@@ -87,11 +99,6 @@ class UsersController {
         return next(new UnauthorizedToViewUserException(request.params.id))
       }
       const userObject = await populateUser(user)
-      delete userObject.birthDate
-      delete userObject.email
-      delete userObject.hashedPassword
-      delete userObject.height
-      delete userObject.weight
       if (!request.user.isTeacher) {
         delete userObject.activityLog_ids
       }

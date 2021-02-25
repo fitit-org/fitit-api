@@ -6,18 +6,18 @@ info:
     url: https://opensource.org/licenses/MIT
   version: 1.0.0
 servers:
-- url: https://api.fitit.tk/api/v1
+  - url: https://api.fitit.tk/api/v1
 tags:
-- name: auth
-  description: Login or register
-- name: user
-  description: Access to user information
-- name: classes
-  description: Access to classes information
-- name: activitylog
-  description: Access to activity information
-- name: activitytypes
-  description: Access to activity types information
+  - name: auth
+    description: Login or register
+  - name: user
+    description: Access to user information
+  - name: classes
+    description: Access to classes information
+  - name: activitylog
+    description: Access to activity information
+  - name: activitytypes
+    description: Access to activity types information
 security:
   - bearerAuth: []
   - tokenInQuery: []
@@ -26,7 +26,7 @@ paths:
   /auth/login:
     post:
       tags:
-      - auth
+        - auth
       summary: Authorize and get a token
       requestBody:
         description: User's email and password
@@ -34,7 +34,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/LoginData'
-              
+
         required: true
       security: []
       responses:
@@ -61,7 +61,7 @@ paths:
   /auth/register:
     post:
       tags:
-      - auth
+        - auth
       summary: Register a user
       requestBody:
         description: User's data
@@ -77,7 +77,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PrivateUserInfo'
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/PrivateUserInfo'
+                  token:
+                    $ref: '#/components/schemas/TokenObject'
+                required:
+                  - user
+                  - token
         400:
           description: Data couldn't be validated, a user with an email already exists or the provided classId is invalid
           content:
@@ -92,7 +100,7 @@ paths:
   /user:
     get:
       tags:
-      - user
+        - user
       summary: Get current user's information
       responses:
         200:
@@ -113,7 +121,7 @@ paths:
                   - $ref: '#/components/responses/AuthenticationTokenMissingException'
     patch:
       tags:
-      - user
+        - user
       summary: Update user's current information
       requestBody:
         description: Partial user's data
@@ -143,7 +151,7 @@ paths:
           $ref: '#/components/responses/DBException'
     delete:
       tags:
-      - user
+        - user
       summary: Delete user's account
       responses:
         200:
@@ -161,7 +169,7 @@ paths:
   /user/{userId}:
     get:
       tags:
-      - user
+        - user
       summary: Get a user by ID
       parameters:
         - in: path
@@ -197,17 +205,26 @@ paths:
   /classes:
     get:
       tags:
-      - classes
-      summary: Get all classes
+        - classes
+      summary: Get all classes the user belongs to and their users
       responses:
         200:
-          description: A list of all classes
+          description: A list of all classes the user belings to and their users
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ClassObject'
+                type: object
+                properties:
+                  classes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ClassObject'
+                  users:
+                    type: array
+                    items:
+                      oneOf:
+                        - $ref: '#/components/schemas/BasicUserInfo'
+                        - $ref: '#/components/schemas/TeachersUserInfo'
         401:
           description: The authentication token is either invalid or is missing
           content:
@@ -218,10 +235,98 @@ paths:
                   - $ref: '#/components/responses/AuthenticationTokenMissingException'
         500:
           $ref: '#/components/responses/DBException'
+    post:
+      tags:
+        - classes
+      summary: Create a new class
+      requestBody:
+        description: New class name
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              required:
+                - name
+      responses:
+        201:
+          description: The newly created class
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassObject'
+        400:
+          $ref: '#/components/responses/ValidationError'
+        401:
+          description: The authentication token is either invalid or is missing
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/WrongAuthenticationTokenException'
+                  - $ref: '#/components/responses/AuthenticationTokenMissingException'
+        403:
+          $ref: '#/components/responses/UserNotTeacherException'
+        500:
+          $ref: '#/components/responses/DBException'
+    put:
+      tags:
+        - classes
+      summary: Join a class
+      requestBody:
+        description: Code for joining a class
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                humanReadable:
+                  type: string
+              required:
+                - humanReadable
+      responses:
+        201:
+          description: All the users classes and related users including the newly added class
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  classes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ClassObject'
+                  users:
+                    type: array
+                    items:
+                      oneOf:
+                        - $ref: '#/components/schemas/BasicUserInfo'
+        400:
+          description: The supplied class code is invalid or the class does not exist
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/ValidationError'
+                  - $ref: '#/components/responses/ClassNotFoundException'
+        401:
+          description: The authentication token is either invalid or is missing
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/WrongAuthenticationTokenException'
+                  - $ref: '#/components/responses/AuthenticationTokenMissingException'
+        403:
+          $ref: '#/components/responses/UserIsTeacherException'
+        500:
+          $ref: '#/components/responses/DBException'
   /classess/{classId}:
     get:
       tags:
-      - classes
+        - classes
       summary: Get a class by ID
       parameters:
         - in: path
@@ -252,7 +357,7 @@ paths:
   /classes/{classId}/users:
     get:
       tags:
-      - classes
+        - classes
       summary: Get users from a class
       parameters:
         - in: path
@@ -286,10 +391,71 @@ paths:
           $ref: '#/components/responses/ClassNotFoundException'
         500:
           $ref: '#/components/responses/DBException'
+  /classes/{classId}/users/{userId}:
+    delete:
+      tags:
+        - classes
+      summary: Remove the user from a class
+      parameters:
+        - in: path
+          name: classId
+          schema:
+            type: string
+          required: true
+          description: A class unique ID
+        - in: path
+          name: userId
+          schema:
+            type: string
+          required: true
+          description: A user unique ID
+      responses:
+        200:
+          description: Specified class with an updated list of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  class:
+                    $ref: '#/components/schemas/ClassObject'
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TeachersUserInfo'
+                required:
+                  - class
+                  - users
+        404:
+          description: Either the class or the user don't exist or the user does not belong to the class
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/ClassNotFoundException'
+                  - $ref: '#/components/responses/UserNotFoundException'
+        403:
+          description: User is not allowed to view the class or is not the teacher
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/UnauthorizedToViewClassException'
+                  - $ref: '#/components/responses/UserNotTeacherException'
+        401:
+          description: The authentication token is either invalid or is missing
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/WrongAuthenticationTokenException'
+                  - $ref: '#/components/responses/AuthenticationTokenMissingException'
+        500:
+          $ref: '#/components/responses/DBException'
   /classes/{classId}/code:
     get:
       tags:
-      - classes
+        - classes
       summary: Generate a class-join code in human-readable format
       parameters:
         - in: path
@@ -330,7 +496,7 @@ paths:
   /activitylog:
     get:
       tags:
-      - activitylog
+        - activitylog
       summary: Get all current user's activities
       parameters:
         - in: query
@@ -359,7 +525,7 @@ paths:
           $ref: '#/components/responses/DBException'
     post:
       tags:
-      - activitylog
+        - activitylog
       summary: Add a new activity
       requestBody:
         description: An activity object to add
@@ -397,7 +563,7 @@ paths:
   /activitylog/{activityId}:
     get:
       tags:
-      - activitylog
+        - activitylog
       summary: Get a single activity by ID
       parameters:
         - in: path
@@ -429,7 +595,7 @@ paths:
           $ref: '#/components/responses/ActivityNotFoundException'
     patch:
       tags:
-      - activitylog
+        - activitylog
       summary: Change a single activity
       parameters:
         - in: path
@@ -442,8 +608,8 @@ paths:
         description: A modified activity object
         content:
           application/json:
-           schema:
-             $ref: '#/components/schemas/ActivityLogObject'
+            schema:
+              $ref: '#/components/schemas/ActivityLogObject'
         required: false
       responses:
         200:
@@ -478,7 +644,7 @@ paths:
   /activitytypes:
     get:
       tags:
-      - activitytypes
+        - activitytypes
       summary: Get all available activity types
       security: []
       responses:
@@ -495,7 +661,7 @@ paths:
   /activitytypes/{activityTypeId}:
     get:
       tags:
-      - activitytypes
+        - activitytypes
       summary: Get a single activity type specified by ID
       parameters:
         - in: path
@@ -586,6 +752,12 @@ components:
             $ref: '#/components/schemas/HttpException'
     UserNotTeacherException:
       description: Only a teacher is authorized to view this resource
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HttpException'
+    UserIsTeacherException:
+      description: Only a pupil is authorized to view this resource
       content:
         application/json:
           schema:
@@ -745,7 +917,7 @@ components:
             dateCreated:
               type: string
               description: The date of account's creation
-              example: "2021-02-04T12:03:26.000Z"
+              example: '2021-02-04T12:03:26.000Z'
             height:
               type: number
               description: User's height

@@ -117,7 +117,16 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PrivateUserInfo"
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "$ref": "#/components/schemas/PrivateUserInfo"
+                    },
+                    "token": {
+                      "$ref": "#/components/schemas/TokenObject"
+                    }
+                  },
+                  "required": ["user", "token"]
                 }
               }
             }
@@ -333,16 +342,34 @@
     "/classes": {
       "get": {
         "tags": ["classes"],
-        "summary": "Get all classes",
+        "summary": "Get all classes the user belongs to and their users",
         "responses": {
           "200": {
-            "description": "A list of all classes",
+            "description": "A list of all classes the user belings to and their users",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ClassObject"
+                  "type": "object",
+                  "properties": {
+                    "classes": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ClassObject"
+                      }
+                    },
+                    "users": {
+                      "type": "array",
+                      "items": {
+                        "oneOf": [
+                          {
+                            "$ref": "#/components/schemas/BasicUserInfo"
+                          },
+                          {
+                            "$ref": "#/components/schemas/TeachersUserInfo"
+                          }
+                        ]
+                      }
+                    }
                   }
                 }
               }
@@ -364,6 +391,154 @@
                 }
               }
             }
+          },
+          "500": {
+            "$ref": "#/components/responses/DBException"
+          }
+        }
+      },
+      "post": {
+        "tags": ["classes"],
+        "summary": "Create a new class",
+        "requestBody": {
+          "description": "New class name",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The newly created class",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "description": "The authentication token is either invalid or is missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/responses/WrongAuthenticationTokenException"
+                    },
+                    {
+                      "$ref": "#/components/responses/AuthenticationTokenMissingException"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/UserNotTeacherException"
+          },
+          "500": {
+            "$ref": "#/components/responses/DBException"
+          }
+        }
+      },
+      "put": {
+        "tags": ["classes"],
+        "summary": "Join a class",
+        "requestBody": {
+          "description": "Code for joining a class",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "humanReadable": {
+                    "type": "string"
+                  }
+                },
+                "required": ["humanReadable"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "All the users classes and related users including the newly added class",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "classes": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ClassObject"
+                      }
+                    },
+                    "users": {
+                      "type": "array",
+                      "items": {
+                        "oneOf": [
+                          {
+                            "$ref": "#/components/schemas/BasicUserInfo"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The supplied class code is invalid or the class does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/responses/ValidationError"
+                    },
+                    {
+                      "$ref": "#/components/responses/ClassNotFoundException"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The authentication token is either invalid or is missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/responses/WrongAuthenticationTokenException"
+                    },
+                    {
+                      "$ref": "#/components/responses/AuthenticationTokenMissingException"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/UserIsTeacherException"
           },
           "500": {
             "$ref": "#/components/responses/DBException"
@@ -481,6 +656,110 @@
           },
           "404": {
             "$ref": "#/components/responses/ClassNotFoundException"
+          },
+          "500": {
+            "$ref": "#/components/responses/DBException"
+          }
+        }
+      }
+    },
+    "/classes/{classId}/users/{userId}": {
+      "delete": {
+        "tags": ["classes"],
+        "summary": "Remove the user from a class",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "classId",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "A class unique ID"
+          },
+          {
+            "in": "path",
+            "name": "userId",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "A user unique ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Specified class with an updated list of users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "class": {
+                      "$ref": "#/components/schemas/ClassObject"
+                    },
+                    "users": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TeachersUserInfo"
+                      }
+                    }
+                  },
+                  "required": ["class", "users"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The authentication token is either invalid or is missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/responses/WrongAuthenticationTokenException"
+                    },
+                    {
+                      "$ref": "#/components/responses/AuthenticationTokenMissingException"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "User is not allowed to view the class or is not the teacher",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/responses/UnauthorizedToViewClassException"
+                    },
+                    {
+                      "$ref": "#/components/responses/UserNotTeacherException"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Either the class or the user don't exist or the user does not belong to the class",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/responses/ClassNotFoundException"
+                    },
+                    {
+                      "$ref": "#/components/responses/UserNotFoundException"
+                    }
+                  ]
+                }
+              }
+            }
           },
           "500": {
             "$ref": "#/components/responses/DBException"
@@ -992,6 +1271,16 @@
       },
       "UserNotTeacherException": {
         "description": "Only a teacher is authorized to view this resource",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/HttpException"
+            }
+          }
+        }
+      },
+      "UserIsTeacherException": {
+        "description": "Only a pupil is authorized to view this resource",
         "content": {
           "application/json": {
             "schema": {
