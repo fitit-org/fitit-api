@@ -6,7 +6,6 @@ import ClassNotFoundException from '../../../exceptions/ClassNotFoundException';
 import UnauthorizedToViewClassException from '../../../exceptions/UnauthorizedToViewClassException';
 import DBException from '../../../exceptions/DBException';
 import UserNotTeacherException from '../../../exceptions/UserNotTeacherException';
-import { getHR } from 'reversible-human-readable-id';
 import Class from '../../../types/class.interface';
 import User from '../../../types/user.interface';
 import { populateUser } from '../../../utils/db';
@@ -59,6 +58,14 @@ class ClassesController implements Controller {
         return next(new ClassNotFoundException(request.params.id));
       }
       const id = new ObjectId(request.params.id);
+      const classCount = await (await MongoHelper.getDB())
+        .collection('classes')
+        .find({ _id: id })
+        .limit(1)
+        .count();
+      if (classCount === 0) {
+        return next(new ClassNotFoundException(request.params.id));
+      }
       const classObject = (await (await MongoHelper.getDB())
         .collection('classes')
         .findOne(
@@ -67,11 +74,7 @@ class ClassesController implements Controller {
           },
           { projection: { humanReadable: 0 } }
         )) as Class;
-      if (classObject) {
-        return response.send(classObject);
-      } else {
-        return next(new ClassNotFoundException(request.params.id));
-      }
+      return response.send(classObject);
     } catch (error) {
       console.log(error.stack);
       return next(new DBException());
@@ -88,46 +91,42 @@ class ClassesController implements Controller {
         return next(new ClassNotFoundException(request.params.id));
       }
       const id = new ObjectId(request.params.id);
-      const classObject = (await (await MongoHelper.getDB())
+      const classCount = await (await MongoHelper.getDB())
         .collection('classes')
-        .findOne({
-          _id: id,
-        })) as Class;
-      if (classObject) {
-        if (
-          (request.user.class_ids as Array<ObjectId>).includes(classObject._id)
-        ) {
-          const users = (await (await MongoHelper.getDB())
-            .collection('users')
-            .find(
-              { class_ids: classObject._id },
-              {
-                projection: {
-                  hashedPassword: 0,
-                  email: 0,
-                  birthDate: 0,
-                  weight: 0,
-                  height: 0,
-                },
-              }
-            )
-            .toArray()) as Array<User>;
-          if (request.user.isTeacher) {
-            for (let user of users) {
-              user = await populateUser(await MongoHelper.getDB(), user, false);
-            }
-          } else {
-            users.forEach((user) => {
-              delete user.activityLog_ids;
-            });
-          }
-          return response.send(users);
-        } else {
-          return next(new UnauthorizedToViewClassException(request.params.id));
-        }
-      } else {
+        .find({ _id: id })
+        .limit(1)
+        .count();
+      if (classCount === 0) {
         return next(new ClassNotFoundException(request.params.id));
       }
+      if (!(request.user.class_ids as Array<ObjectId>).includes(id)) {
+        return next(new UnauthorizedToViewClassException(request.params.id));
+      }
+      const users = (await (await MongoHelper.getDB())
+        .collection('users')
+        .find(
+          { class_ids: id },
+          {
+            projection: {
+              hashedPassword: 0,
+              email: 0,
+              birthDate: 0,
+              weight: 0,
+              height: 0,
+            },
+          }
+        )
+        .toArray()) as Array<User>;
+      if (request.user.isTeacher) {
+        for (let user of users) {
+          user = await populateUser(await MongoHelper.getDB(), user, false);
+        }
+      } else {
+        users.forEach((user) => {
+          delete user.activityLog_ids;
+        });
+      }
+      return response.send(users);
     } catch (error) {
       console.log(error.stack);
       return next(new DBException());
@@ -144,27 +143,24 @@ class ClassesController implements Controller {
         return next(new ClassNotFoundException(request.params.id));
       }
       const id = new ObjectId(request.params.id);
-      const classObject = (await (await MongoHelper.getDB())
+      const classCount = await (await MongoHelper.getDB())
         .collection('classes')
-        .findOne({
-          _id: id,
-        })) as Class;
-      if (classObject) {
-        if (
-          (request.user.class_ids as Array<ObjectId>).includes(classObject._id)
-        ) {
-          if (request.user.isTeacher) {
-            const classIdHash = { code: classObject.humanReadable };
-            return response.send(classIdHash);
-          } else {
-            return next(new UserNotTeacherException());
-          }
-        } else {
-          return next(new UnauthorizedToViewClassException(request.params.id));
-        }
-      } else {
+        .find({ _id: id })
+        .limit(1)
+        .count();
+      if (classCount === 0) {
         return next(new ClassNotFoundException(request.params.id));
       }
+      if (!(request.user.class_ids as Array<ObjectId>).includes(id)) {
+        return next(new UnauthorizedToViewClassException(request.params.id));
+      }
+      if (!request.user.isTeacher) {
+        return next(new UserNotTeacherException());
+      }
+      const classCode = ((await (await MongoHelper.getDB())
+        .collection('classes')
+        .findOne({ _id: id })) as Class).humanReadable;
+      return response.send({ code: classCode });
     } catch (error) {
       console.log(error.stack);
       return next(new DBException());
