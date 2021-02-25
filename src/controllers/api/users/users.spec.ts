@@ -105,7 +105,6 @@ describe('/api/v1/users', () => {
                   'isActive',
                   'isTeacher',
                   'class_ids',
-                  'dateCreated',
                   'activityLog_ids',
                   'name',
                   'surname',
@@ -138,7 +137,6 @@ describe('/api/v1/users', () => {
                   'isActive',
                   'isTeacher',
                   'class_ids',
-                  'dateCreated',
                   'name',
                   'surname',
                 ])
