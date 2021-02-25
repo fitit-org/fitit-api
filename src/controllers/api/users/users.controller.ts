@@ -12,7 +12,7 @@ import { MongoHelper } from '../../../utils/mongo.helper';
 import { ObjectId } from 'bson';
 
 class UsersController {
-  public path = '/user';
+  public path = '/users';
   public router = Router();
 
   constructor() {

@@ -4,7 +4,7 @@ import chaiHttp from 'chai-http';
 chai.use(chaiHttp);
 const apiURL = '127.0.0.1:3000';
 
-describe('/api/v1/user', () => {
+describe('/api/v1/users', () => {
   describe('/ GET', () => {
     it('Should return current user', (done) => {
       chai
@@ -18,7 +18,7 @@ describe('/api/v1/user', () => {
           const token: string = res.body.token;
           chai
             .request(apiURL)
-            .get('/api/v1/user')
+            .get('/api/v1/users')
             .set({ Authorization: `Bearer ${token}` })
             .end((err, res) => {
               chai
@@ -58,7 +58,7 @@ describe('/api/v1/user', () => {
           const userId: string = res.body.user._id;
           chai
             .request(apiURL)
-            .get(`/api/v1/user/${userId}`)
+            .get(`/api/v1/users/${userId}`)
             .set({ Authorization: `Bearer ${token}` })
             .end((err, res) => {
               chai
@@ -95,7 +95,7 @@ describe('/api/v1/user', () => {
           const token: string = res.body.token;
           chai
             .request(apiURL)
-            .get(`/api/v1/user/601be28e50364b654dec42cf`)
+            .get(`/api/v1/users/601be28e50364b654dec42cf`)
             .set({ Authorization: `Bearer ${token}` })
             .end((err, res) => {
               chai
@@ -128,7 +128,7 @@ describe('/api/v1/user', () => {
           const token: string = res.body.token;
           chai
             .request(apiURL)
-            .get(`/api/v1/user/601be28e50364b654dec42cf`)
+            .get(`/api/v1/users/601be28e50364b654dec42cf`)
             .set({ Authorization: `Bearer ${token}` })
             .end((err, res) => {
               chai
@@ -160,7 +160,7 @@ describe('/api/v1/user', () => {
           const token: string = res.body.token;
           chai
             .request(apiURL)
-            .get(`/api/v1/user/601be28e50364b654dec1111`)
+            .get(`/api/v1/users/601be28e50364b654dec1111`)
             .set({ Authorization: `Bearer ${token}` })
             .end((err, res) => {
               chai.expect(res).to.be.json;
@@ -185,7 +185,7 @@ describe('/api/v1/user', () => {
           const token: string = res.body.token;
           chai
             .request(apiURL)
-            .get(`/api/v1/user/601be28e50364b654dec42cf`)
+            .get(`/api/v1/users/601be28e50364b654dec42cf`)
             .set({ Authorization: `Bearer ${token}` })
             .end((err, res) => {
               chai.expect(res).to.be.json;
@@ -213,7 +213,7 @@ describe('/api/v1/user', () => {
           const token: string = res.body.token;
           chai
             .request(apiURL)
-            .patch(`/api/v1/user`)
+            .patch(`/api/v1/users`)
             .send({ surname: 'ModifiedPupil' })
             .set({ Authorization: `Bearer ${token}` })
             .end((err, res) => {
@@ -254,7 +254,7 @@ describe('/api/v1/user', () => {
           const token: string = res.body.token;
           chai
             .request(apiURL)
-            .delete(`/api/v1/user`)
+            .delete(`/api/v1/users`)
             .set({ Authorization: `Bearer ${token}` })
             .end((err, res) => {
               chai.expect(res).to.have.status(204);

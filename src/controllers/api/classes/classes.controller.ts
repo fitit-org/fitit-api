@@ -14,6 +14,7 @@ import { ObjectId } from 'bson';
 import { getHR } from 'reversible-human-readable-id';
 import CreateClassDto from './class.dto';
 import validationMiddleware from '../../../middleware/validation.middleware';
+import UserNotFoundException from '../../../exceptions/UserNotFoundException';
 
 class ClassesController implements Controller {
   public path = '/classes';
@@ -31,6 +32,7 @@ class ClassesController implements Controller {
       authMiddleware,
       this.getClassUsers
     );
+    this.router.delete(`${this.path}/:id/users/:uid`, authMiddleware);
     this.router.get(`${this.path}/:id/code`, authMiddleware, this.genClassCode);
     this.router.post(
       this.path,
@@ -247,6 +249,75 @@ class ClassesController implements Controller {
         .collection('classes')
         .findOne({ _id: insertResult.insertedId })) as Class;
       return response.status(201).send(createdClass);
+    } catch (error) {
+      console.log(error.stack);
+      return next(new DBException());
+    }
+  };
+
+  private removeUserFromClass = async (
+    request: RequestWithUser,
+    response: Response,
+    next: NextFunction
+  ) => {
+    try {
+      if (!ObjectId.isValid(request.params.id)) {
+        return next(new ClassNotFoundException(request.params.id));
+      }
+      if (!ObjectId.isValid(request.params.uid)) {
+        return next(new UserNotFoundException(request.params.uid));
+      }
+      const id = new ObjectId(request.params.id);
+      const uid = new ObjectId(request.params.uid);
+      const classCount = await (await MongoHelper.getDB())
+        .collection('classes')
+        .find({ _id: id })
+        .limit(1)
+        .count();
+      if (classCount === 0) {
+        return next(new ClassNotFoundException(request.params.id));
+      }
+      const userCount = await (await MongoHelper.getDB())
+        .collection('users')
+        .find({ _id: uid })
+        .limit(1)
+        .count();
+      if (userCount === 0) {
+        return next(new UserNotFoundException(request.params.uid));
+      }
+      if (!(request.user.class_ids as Array<ObjectId>).includes(id)) {
+        return next(new UnauthorizedToViewClassException(request.params.id));
+      }
+      if (!request.user.isTeacher) {
+        return next(new UserNotTeacherException());
+      }
+      await (await MongoHelper.getDB())
+        .collection('users')
+        .updateOne({ _id: uid }, { $pull: { class_ids: id } });
+      const classResponse = (await (await MongoHelper.getDB())
+        .collection('classes')
+        .findOne({ _id: id })) as Class;
+      const users = (await (await MongoHelper.getDB())
+        .collection('users')
+        .find(
+          {
+            class_ids: {
+              $in: id,
+            },
+          },
+          {
+            projection: {
+              name: 1,
+              surname: 1,
+              activityLog_ids: 1,
+              isTeacher: 1,
+            },
+          }
+        )
+        .toArray()) as Array<User>;
+      return response
+        .status(204)
+        .send({ classes: classResponse, users: users });
     } catch (error) {
       console.log(error.stack);
       return next(new DBException());
