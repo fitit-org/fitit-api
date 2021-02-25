@@ -7,11 +7,11 @@ import validateEnv from './utils/validateEnv';
 import { MongoHelper } from './utils/mongo.helper';
 
 validateEnv();
-MongoHelper.connect().then(() => {
+MongoHelper.connect().then((db) => {
   console.log('Connected to database');
   const app = new App([
-    new ApiController(),
-    new AuthenticationController(),
+    new ApiController(db),
+    new AuthenticationController(db),
     new DocsController(),
   ]);
   app.listen();

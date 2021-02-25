@@ -3,14 +3,17 @@ import Controller from '../../../types/controller.interface';
 import ActivityTypeNotFoundException from '../../../exceptions/ActivityTypeNotFoundException';
 import DBException from '../../../exceptions/DBException';
 import ActivityType from '../../../types/activityType.interface';
-import { MongoHelper } from '../../../utils/mongo.helper';
 import { ObjectId } from 'bson';
+import { Db, Collection } from 'mongodb';
 
 class ActivityTypesController implements Controller {
   public path = '/activitytypes';
   public router = Router();
 
-  constructor() {
+  private activityTypes: Collection<unknown>;
+
+  constructor(db: Db) {
+    this.activityTypes = db.collection('activityTypes');
     this.initializeRoutes();
   }
 
@@ -25,8 +28,7 @@ class ActivityTypesController implements Controller {
     next: NextFunction
   ) => {
     try {
-      const allActivities = (await (await MongoHelper.getDB())
-        .collection('activityTypes')
+      const allActivities = (await this.activityTypes
         .find({})
         .toArray()) as Array<ActivityType>;
       return response.send(allActivities);
@@ -45,11 +47,9 @@ class ActivityTypesController implements Controller {
       if (!ObjectId.isValid(request.params.id)) {
         return next(new ActivityTypeNotFoundException(request.params.id));
       }
-      const activityType = (await (await MongoHelper.getDB())
-        .collection('activityTypes')
-        .findOne({
-          _id: new ObjectId(request.params.id),
-        })) as ActivityType;
+      const activityType = (await this.activityTypes.findOne({
+        _id: new ObjectId(request.params.id),
+      })) as ActivityType;
       if (!activityType) {
         return next(new ActivityTypeNotFoundException(request.params.id));
       }

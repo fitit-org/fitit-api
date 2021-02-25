@@ -5,6 +5,7 @@ import ClassesController from './classes/classes.controller';
 import UsersController from './users/users.controller';
 import ActivityLogsController from './activityLogs/activityLogs.controller';
 import AuthenticationController from '../authentication/authentication.controller';
+import { Db } from 'mongodb';
 
 class ApiController implements Controller {
   public path = ['/api', '/api/v1'];
@@ -15,12 +16,12 @@ class ApiController implements Controller {
   private activityLogsController: ActivityLogsController;
   private authenticationController: AuthenticationController;
 
-  constructor() {
-    this.activityTypesController = new ActivityTypesController();
-    this.classesController = new ClassesController();
-    this.usersController = new UsersController();
-    this.activityLogsController = new ActivityLogsController();
-    this.authenticationController = new AuthenticationController();
+  constructor(db: Db) {
+    this.activityTypesController = new ActivityTypesController(db);
+    this.classesController = new ClassesController(db);
+    this.usersController = new UsersController(db);
+    this.activityLogsController = new ActivityLogsController(db);
+    this.authenticationController = new AuthenticationController(db);
     this.initializeSubControllers();
   }
 

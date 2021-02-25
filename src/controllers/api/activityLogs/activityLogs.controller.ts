@@ -11,16 +11,22 @@ import validationMiddleware from '../../../middleware/validation.middleware';
 import ActivityLog from '../../../types/activityLog.interface';
 import User from '../../../types/user.interface';
 import { populateActivities, populateActivity } from '../../../utils/db';
-import { MongoHelper } from '../../../utils/mongo.helper';
 import { ObjectId } from 'bson';
 import NoSuchActivityTypeException from '../../../exceptions/NoSuchActivityTypeException';
-import { FilterQuery } from 'mongodb';
+import { FilterQuery, Db, Collection } from 'mongodb';
 
 class ActivityLogsController implements Controller {
   public path = '/activitylog';
   public router = Router();
 
-  constructor() {
+  private activityTypes: Collection<unknown>;
+  private activityLogs: Collection<unknown>;
+  private users: Collection<unknown>;
+
+  constructor(db: Db) {
+    this.activityTypes = db.collection('activityTypes');
+    this.activityLogs = db.collection('activityLogs');
+    this.users = db.collection('users');
     this.initializeRoutes();
   }
 
@@ -53,14 +59,10 @@ class ActivityLogsController implements Controller {
       if (Boolean(request.query.unfinished)) {
         query.endDate = { $exists: false };
       }
-      let activities = (await (await MongoHelper.getDB())
-        .collection('activityLogs')
+      let activities = (await this.activityLogs
         .find(query)
         .toArray()) as Array<ActivityLog>;
-      activities = await populateActivities(
-        await MongoHelper.getDB(),
-        activities
-      );
+      activities = await populateActivities(activities);
       return response.send(activities);
     } catch (error) {
       console.log(error.stack);
@@ -77,20 +79,16 @@ class ActivityLogsController implements Controller {
       if (!ObjectId.isValid(request.params.id)) {
         return next(new ActivityNotFoundException(request.params.id));
       }
-      let activity = (await (await MongoHelper.getDB())
-        .collection('activityLogs')
-        .findOne({
-          _id: new ObjectId(request.params.id),
-        })) as ActivityLog;
+      let activity = (await this.activityLogs.findOne({
+        _id: new ObjectId(request.params.id),
+      })) as ActivityLog;
       if (!activity) {
         return next(new ActivityNotFoundException(request.params.id));
       }
       if (request.user.isTeacher) {
-        const activityUser = (await (await MongoHelper.getDB())
-          .collection('users')
-          .findOne({
-            activityLog_ids: activity._id,
-          })) as User;
+        const activityUser = (await this.users.findOne({
+          activityLog_ids: activity._id,
+        })) as User;
         let hasOverlap = false;
         for (const teacherClassId of request.user
           .class_ids as Array<ObjectId>) {
@@ -106,7 +104,7 @@ class ActivityLogsController implements Controller {
             new UnauthorizedToViewActivityException(request.params.id)
           );
         }
-        activity = await populateActivity(await MongoHelper.getDB(), activity);
+        activity = await populateActivity(activity);
         return response.send(activity);
       }
       let hasActivity = false;
@@ -119,7 +117,7 @@ class ActivityLogsController implements Controller {
       if (!hasActivity) {
         return next(new UnauthorizedToViewActivityException(request.params.id));
       }
-      activity = await populateActivity(await MongoHelper.getDB(), activity);
+      activity = await populateActivity(activity);
       return response.send(activity);
     } catch (error) {
       console.log(error.stack);
@@ -134,8 +132,7 @@ class ActivityLogsController implements Controller {
   ) => {
     const activityObject: AddActivityDto = request.body;
     try {
-      const activityTypeCount = await (await MongoHelper.getDB())
-        .collection('activityTypes')
+      const activityTypeCount = await this.activityTypes
         .find({
           _id: new ObjectId(activityObject.activityType_id),
         })
@@ -158,24 +155,19 @@ class ActivityLogsController implements Controller {
           return next(new InvalidActivityTimesException());
         }
       }
-      const insertResult = await (await MongoHelper.getDB())
-        .collection('activityLogs')
-        .insertOne(activityInsertObject);
-      await (await MongoHelper.getDB()).collection('users').updateOne(
+      const insertResult = await this.activityLogs.insertOne(
+        activityInsertObject
+      );
+      await this.users.updateOne(
         { _id: request.user._id },
         {
           $push: { activityLog_ids: insertResult.insertedId },
         }
       );
-      let createdActivity = (await (await MongoHelper.getDB())
-        .collection('activityLogs')
-        .findOne({
-          _id: insertResult.insertedId,
-        })) as ActivityLog;
-      createdActivity = await populateActivity(
-        await MongoHelper.getDB(),
-        createdActivity
-      );
+      let createdActivity = (await this.activityLogs.findOne({
+        _id: insertResult.insertedId,
+      })) as ActivityLog;
+      createdActivity = await populateActivity(createdActivity);
       return response.status(201).send(createdActivity);
     } catch (error) {
       console.log(error.stack);
@@ -194,11 +186,9 @@ class ActivityLogsController implements Controller {
         return next(new ActivityNotFoundException(request.params.id));
       }
       const paramId = new ObjectId(request.params.id);
-      const activity = (await (await MongoHelper.getDB())
-        .collection('activityLogs')
-        .findOne({
-          _id: paramId,
-        })) as ActivityLog;
+      const activity = (await this.activityLogs.findOne({
+        _id: paramId,
+      })) as ActivityLog;
       if (!activity) {
         return next(new ActivityNotFoundException(request.params.id));
       }
@@ -217,8 +207,7 @@ class ActivityLogsController implements Controller {
       const mergedActivityUpdateObject: Record<string, unknown> = {};
       if (activityObject.activityType_id) {
         const activityTypeId = new ObjectId(activityObject.activityType_id);
-        const activityTypeLength = await (await MongoHelper.getDB())
-          .collection('activityTypes')
+        const activityTypeLength = await this.activityTypes
           .find({
             _id: activityTypeId,
           })
@@ -244,18 +233,14 @@ class ActivityLogsController implements Controller {
           return next(new InvalidActivityTimesException());
         }
       }
-      await (await MongoHelper.getDB())
-        .collection('activityLogs')
-        .updateOne({ _id: paramId }, { $set: mergedActivityUpdateObject });
-      let updatedActivity = (await (await MongoHelper.getDB())
-        .collection('activityLogs')
-        .findOne({
-          _id: paramId,
-        })) as ActivityLog;
-      updatedActivity = await populateActivity(
-        await MongoHelper.getDB(),
-        updatedActivity
+      await this.activityLogs.updateOne(
+        { _id: paramId },
+        { $set: mergedActivityUpdateObject }
       );
+      let updatedActivity = (await this.activityLogs.findOne({
+        _id: paramId,
+      })) as ActivityLog;
+      updatedActivity = await populateActivity(updatedActivity);
       return response.send(updatedActivity);
     } catch (error) {
       console.log(error.stack);

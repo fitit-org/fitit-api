@@ -8,14 +8,19 @@ import UserNotFoundException from '../../../exceptions/UserNotFoundException';
 import UnauthorizedToViewUserException from '../../../exceptions/UnauthorizedToViewUserException';
 import User from '../../../types/user.interface';
 import { populateUser } from '../../../utils/db';
-import { MongoHelper } from '../../../utils/mongo.helper';
 import { ObjectId } from 'bson';
+import { Db, Collection } from 'mongodb';
 
 class UsersController {
   public path = '/users';
   public router = Router();
 
-  constructor() {
+  private users: Collection<unknown>;
+  private activityLogs: Collection<unknown>;
+
+  constructor(db: Db) {
+    this.users = db.collection('users');
+    this.activityLogs = db.collection('activityLogs');
     this.initializeRoutes();
   }
 
@@ -37,10 +42,7 @@ class UsersController {
     next: NextFunction
   ) => {
     try {
-      const userObject = await populateUser(
-        await MongoHelper.getDB(),
-        request.user
-      );
+      const userObject = await populateUser(request.user);
       return response.send(userObject);
     } catch (error) {
       console.log(error.stack);
@@ -59,14 +61,10 @@ class UsersController {
       }
       const userId = new ObjectId(request.params.id);
       if (userId.equals(request.user._id)) {
-        const userObject = await populateUser(
-          await MongoHelper.getDB(),
-          request.user
-        );
+        const userObject = await populateUser(request.user);
         return response.send(userObject);
       }
-      const userCount = await (await MongoHelper.getDB())
-        .collection('users')
+      const userCount = await this.users
         .find({
           _id: userId,
         })
@@ -75,9 +73,7 @@ class UsersController {
       if (userCount === 0) {
         return next(new UserNotFoundException(request.params.id));
       }
-      const user = (await (await MongoHelper.getDB())
-        .collection('users')
-        .findOne({ _id: userId })) as User;
+      const user = (await this.users.findOne({ _id: userId })) as User;
       let hasOverlap = false;
       for (const classId of user.class_ids as Array<ObjectId>) {
         for (const userClassId of request.user.class_ids as Array<ObjectId>) {
@@ -90,7 +86,7 @@ class UsersController {
       if (!hasOverlap) {
         return next(new UnauthorizedToViewUserException(request.params.id));
       }
-      const userObject = await populateUser(await MongoHelper.getDB(), user);
+      const userObject = await populateUser(user);
       delete userObject.birthDate;
       delete userObject.email;
       delete userObject.hashedPassword;
@@ -113,16 +109,12 @@ class UsersController {
   ) => {
     const userData: UserDto = request.body;
     try {
-      await (await MongoHelper.getDB())
-        .collection('users')
-        .updateOne({ _id: request.user._id }, { $set: userData });
-      const user = (await (await MongoHelper.getDB())
-        .collection('users')
-        .findOne(
-          { _id: request.user._id },
-          { projection: { hashedPassword: 0 } }
-        )) as User;
-      const populatedUser = await populateUser(await MongoHelper.getDB(), user);
+      await this.users.updateOne({ _id: request.user._id }, { $set: userData });
+      const user = (await this.users.findOne(
+        { _id: request.user._id },
+        { projection: { hashedPassword: 0 } }
+      )) as User;
+      const populatedUser = await populateUser(user);
       response.send(populatedUser);
     } catch (error) {
       console.log(error.stack);
@@ -137,19 +129,15 @@ class UsersController {
   ) => {
     try {
       if (request.user.activityLog_ids) {
-        await (await MongoHelper.getDB())
-          .collection('activityLogs')
-          .deleteMany({
-            _id: {
-              $in: request.user.activityLog_ids as Array<ObjectId>,
-            },
-          });
-      }
-      const userRemovalSuccess = await (await MongoHelper.getDB())
-        .collection('users')
-        .deleteOne({
-          _id: request.user._id,
+        await this.activityLogs.deleteMany({
+          _id: {
+            $in: request.user.activityLog_ids as Array<ObjectId>,
+          },
         });
+      }
+      const userRemovalSuccess = await this.users.deleteOne({
+        _id: request.user._id,
+      });
       if (userRemovalSuccess.deletedCount === 1) {
         return response.status(204).send();
       } else {

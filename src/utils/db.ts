@@ -1,33 +1,36 @@
-import { Db } from 'mongodb';
 import User from '../types/user.interface';
 import ActivityLog from '../types/activityLog.interface';
 import ActivityType from '../types/activityType.interface';
 import Class from '../types/class.interface';
 import { ObjectId } from 'bson';
+import { MongoHelper } from './mongo.helper';
 
 export async function popualateUsers(
-  db: Db,
   users: Array<User>,
   populateClass = true,
   populateActivityTypes = true
 ): Promise<Array<User>> {
   await Promise.all(
     users.map(async (user) => {
-      user = await populateUser(db, user, populateClass, populateActivityTypes);
+      const populatedUser = await populateUser(
+        user,
+        populateClass,
+        populateActivityTypes
+      );
+      user = populatedUser;
     })
   );
   return users;
 }
 
 export async function populateUser(
-  db: Db,
   user: User,
   populateClass = true,
   populateActivityTypes = true
 ): Promise<User> {
   const userObj = { ...user };
   if (user.activityLog_ids) {
-    userObj.activityLog_ids = (await db
+    userObj.activityLog_ids = (await (await MongoHelper.getDB())
       .collection('activityLogs')
       .find({
         _id: {
@@ -37,13 +40,12 @@ export async function populateUser(
       .toArray()) as Array<ActivityLog>;
     if (populateActivityTypes) {
       userObj.activityLog_ids = await populateActivities(
-        db,
         userObj.activityLog_ids
       );
     }
   }
   if (populateClass) {
-    userObj.class_ids = (await db
+    userObj.class_ids = (await (await MongoHelper.getDB())
       .collection('classes')
       .find({
         _id: {
@@ -56,23 +58,22 @@ export async function populateUser(
 }
 
 export async function populateActivities(
-  db: Db,
   activities: Array<ActivityLog>
 ): Promise<Array<ActivityLog>> {
   await Promise.all(
     activities.map(async (act) => {
-      act = await populateActivity(db, act);
+      const populatedActivity = await populateActivity(act);
+      act = populatedActivity;
     })
   );
   return activities;
 }
 
-export async function populateActivity(
-  db: Db,
-  act: ActivityLog
-): Promise<ActivityLog> {
-  act.activityType_id = (await db.collection('activityTypes').findOne({
-    _id: act.activityType_id as ObjectId,
-  })) as ActivityType;
+export async function populateActivity(act: ActivityLog): Promise<ActivityLog> {
+  act.activityType_id = (await (await MongoHelper.getDB())
+    .collection('activityTypes')
+    .findOne({
+      _id: act.activityType_id as ObjectId,
+    })) as ActivityType;
   return act;
 }

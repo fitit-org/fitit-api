@@ -4,8 +4,8 @@ export class MongoHelper {
   public static client: MongoClient;
   public static db: Db;
 
-  public static connect(): Promise<MongoClient> {
-    return new Promise<MongoClient>((resolve, reject) => {
+  public static connect(): Promise<Db> {
+    return new Promise<Db>((resolve, reject) => {
       MongoClient.connect(
         process.env.MONGO_URL,
         {
@@ -18,7 +18,7 @@ export class MongoHelper {
           } else {
             MongoHelper.client = client;
             MongoHelper.db = client.db(process.env.MONGO_DB);
-            resolve(client);
+            resolve(MongoHelper.db);
           }
         }
       );
@@ -31,6 +31,7 @@ export class MongoHelper {
 
   public static async getDB(): Promise<Db> {
     if (MongoHelper.db === undefined) {
+      console.log('DB was undefined!');
       await MongoHelper.connect();
     }
     return MongoHelper.db;

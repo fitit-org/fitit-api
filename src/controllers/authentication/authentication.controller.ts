@@ -13,15 +13,22 @@ import DataStoredInToken from '../../types/dataStoredInToken.interface';
 import TokenData from '../../types/tokenData.interface';
 import { sign } from 'jsonwebtoken';
 import DBException from '../../exceptions/DBException';
-import { MongoHelper } from '../../utils/mongo.helper';
 import { populateUser } from '../../utils/db';
 import { Double, ObjectId } from 'bson';
+import { Collection, Db } from 'mongodb';
 
 class AuthenticationController implements Controller {
   public path = '/auth';
   public router = Router();
 
-  constructor() {
+  private users: Collection<unknown>;
+  private classes: Collection<unknown>;
+  private teacherCodes: Collection<unknown>;
+
+  constructor(db: Db) {
+    this.users = db.collection('users');
+    this.classes = db.collection('classes');
+    this.teacherCodes = db.collection('teacherCodes');
     this.initializeRoutes();
   }
 
@@ -45,8 +52,7 @@ class AuthenticationController implements Controller {
   ) => {
     const userData: CreateUserDto = request.body;
     try {
-      const userResults = await (await MongoHelper.getDB())
-        .collection('users')
+      const userResults = await this.users
         .find({ email: userData.email })
         .limit(1)
         .count();
@@ -55,8 +61,7 @@ class AuthenticationController implements Controller {
           new UserWithThatEmailAlreadyExistsException(userData.email)
         );
       }
-      const teacherCodesCount = await (await MongoHelper.getDB())
-        .collection('teacherCodes')
+      const teacherCodesCount = await this.teacherCodes
         .find({ humanReadable: userData.classId })
         .count();
       const userInsertObject: Record<string, unknown> = {};
@@ -77,28 +82,23 @@ class AuthenticationController implements Controller {
         userInsertObject.birthDate = new Date(userData.birthDate);
       }
       if (teacherCodesCount !== 0) {
-        await (await MongoHelper.getDB())
-          .collection('teacherCodes')
-          .deleteOne({ humanReadable: userData.classId });
+        await this.teacherCodes.deleteOne({ humanReadable: userData.classId });
         userInsertObject.isTeacher = true;
         userInsertObject.class_ids = [] as Array<ObjectId>;
       } else {
         userInsertObject.isTeacher = false;
-        const classObj = (await (await MongoHelper.getDB())
-          .collection('classes')
-          .findOne({ humanReadable: userData.classId })) as Class;
+        const classObj = (await this.classes.findOne({
+          humanReadable: userData.classId,
+        })) as Class;
         if (!classObj) {
           return next(new NoSuchClassException(userData.classId));
         }
         userInsertObject.class_ids = [classObj._id];
       }
-      const user = await (await MongoHelper.getDB())
-        .collection('users')
-        .insertOne(userInsertObject);
+      const user = await this.users.insertOne(userInsertObject);
       delete userInsertObject.hashedPassword;
       userInsertObject._id = user.insertedId;
       const registeredUser = await populateUser(
-        await MongoHelper.getDB(),
         (userInsertObject as unknown) as User
       );
       return response.status(201).send(registeredUser);
@@ -115,11 +115,9 @@ class AuthenticationController implements Controller {
   ) => {
     const logInData: LogInDto = request.body;
     try {
-      const user = (await (await MongoHelper.getDB())
-        .collection('users')
-        .findOne({
-          email: logInData.email,
-        })) as User;
+      const user = (await this.users.findOne({
+        email: logInData.email,
+      })) as User;
       if (!user) {
         return next(new WrongCredentialsException());
       }
