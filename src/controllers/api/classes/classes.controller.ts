@@ -11,6 +11,9 @@ import User from '../../../types/user.interface';
 import { populateUser } from '../../../utils/db';
 import { MongoHelper } from '../../../utils/mongo.helper';
 import { ObjectId } from 'bson';
+import { getHR } from 'reversible-human-readable-id';
+import CreateClassDto from './class.dto';
+import validationMiddleware from '../../../middleware/validation.middleware';
 
 class ClassesController implements Controller {
   public path = '/classes';
@@ -29,6 +32,12 @@ class ClassesController implements Controller {
       this.getClassUsers
     );
     this.router.get(`${this.path}/:id/code`, authMiddleware, this.genClassCode);
+    this.router.post(
+      this.path,
+      authMiddleware,
+      validationMiddleware(CreateClassDto),
+      this.createClass
+    );
   }
 
   private getAllClasses = async (
@@ -39,7 +48,14 @@ class ClassesController implements Controller {
     try {
       const classes = (await (await MongoHelper.getDB())
         .collection('classes')
-        .find({}, { projection: { humanReadable: 0 } })
+        .find(
+          {
+            _id: {
+              $in: request.user.class_ids as Array<ObjectId>,
+            },
+          },
+          { projection: { humanReadable: 0 } }
+        )
         .toArray()) as Array<Class>;
       return response.send(classes);
     } catch (error) {
@@ -161,6 +177,30 @@ class ClassesController implements Controller {
         .collection('classes')
         .findOne({ _id: id })) as Class).humanReadable;
       return response.send({ code: classCode });
+    } catch (error) {
+      console.log(error.stack);
+      return next(new DBException());
+    }
+  };
+
+  private createClass = async (
+    request: RequestWithUser,
+    response: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const classData: CreateClassDto = request.body;
+      if (!request.user.isTeacher) {
+        return next(new UserNotTeacherException());
+      }
+      const code = getHR(classData.name);
+      const insertResult = await (await MongoHelper.getDB())
+        .collection('classes')
+        .insertOne({ name: classData.name, code: code, isActive: true });
+      const createdClass = (await (await MongoHelper.getDB())
+        .collection('classes')
+        .findOne({ _id: insertResult.insertedId })) as Class;
+      return response.status(201).send(createdClass);
     } catch (error) {
       console.log(error.stack);
       return next(new DBException());
