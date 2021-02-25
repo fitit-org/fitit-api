@@ -8,7 +8,7 @@ import DBException from '../../../exceptions/DBException';
 import UserNotTeacherException from '../../../exceptions/UserNotTeacherException';
 import Class from '../../../types/class.interface';
 import User from '../../../types/user.interface';
-import { populateUser } from '../../../utils/db';
+import { populateUser, popualateUsers } from '../../../utils/db';
 import { MongoHelper } from '../../../utils/mongo.helper';
 import { ObjectId } from 'bson';
 import { getHR } from 'reversible-human-readable-id';
@@ -57,7 +57,53 @@ class ClassesController implements Controller {
           { projection: { humanReadable: 0 } }
         )
         .toArray()) as Array<Class>;
-      return response.send(classes);
+      let users: Array<User>;
+      if (request.user.isTeacher) {
+        users = (await (await MongoHelper.getDB())
+          .collection('users')
+          .find(
+            {
+              class_ids: {
+                $in: request.user.class_ids,
+              },
+            },
+            {
+              projection: {
+                name: 1,
+                surname: 1,
+                activityLog_ids: 1,
+                isTeacher: 1,
+              },
+            }
+          )
+          .toArray()) as Array<User>;
+        users = await popualateUsers(
+          await MongoHelper.getDB(),
+          users,
+          false,
+          true
+        );
+        return response.send({ classes: classes, users: users });
+      } else {
+        users = (await (await MongoHelper.getDB())
+          .collection('users')
+          .find(
+            {
+              class_ids: {
+                $in: request.user.class_ids,
+              },
+            },
+            {
+              projection: {
+                name: 1,
+                surname: 1,
+                isTeacher: 1,
+              },
+            }
+          )
+          .toArray()) as Array<User>;
+        return response.send({ classes: classes, users: users });
+      }
     } catch (error) {
       console.log(error.stack);
       return next(new DBException());

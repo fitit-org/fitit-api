@@ -5,10 +5,25 @@ import ActivityType from '../types/activityType.interface';
 import Class from '../types/class.interface';
 import { ObjectId } from 'bson';
 
+export async function popualateUsers(
+  db: Db,
+  users: Array<User>,
+  populateClass = true,
+  populateActivityTypes = true
+): Promise<Array<User>> {
+  await Promise.all(
+    users.map(async (user) => {
+      user = await populateUser(db, user, populateClass, populateActivityTypes);
+    })
+  );
+  return users;
+}
+
 export async function populateUser(
   db: Db,
   user: User,
-  populateClass = true
+  populateClass = true,
+  populateActivityTypes = true
 ): Promise<User> {
   const userObj = { ...user };
   if (user.activityLog_ids) {
@@ -20,6 +35,12 @@ export async function populateUser(
         },
       })
       .toArray()) as Array<ActivityLog>;
+    if (populateActivityTypes) {
+      userObj.activityLog_ids = await populateActivities(
+        db,
+        userObj.activityLog_ids
+      );
+    }
   }
   if (populateClass) {
     userObj.class_ids = (await db
@@ -40,9 +61,7 @@ export async function populateActivities(
 ): Promise<Array<ActivityLog>> {
   await Promise.all(
     activities.map(async (act) => {
-      act.activityType_id = (await db.collection('activityTypes').findOne({
-        _id: act.activityType_id as ObjectId,
-      })) as ActivityType;
+      act = await populateActivity(db, act);
     })
   );
   return activities;
