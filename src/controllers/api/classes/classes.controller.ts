@@ -40,12 +40,12 @@ class ClassesController implements Controller {
     try {
       const classes = (await (await MongoHelper.getDB())
         .collection('classes')
-        .find({})
+        .find({}, { projection: { humanReadable: 0 } })
         .toArray()) as Array<Class>;
-      response.send(classes);
+      return response.send(classes);
     } catch (error) {
       console.log(error.stack);
-      next(new DBException());
+      return next(new DBException());
     }
   };
 
@@ -55,19 +55,26 @@ class ClassesController implements Controller {
     next: NextFunction
   ) => {
     try {
+      if (!ObjectId.isValid(request.params.id)) {
+        return next(new ClassNotFoundException(request.params.id));
+      }
+      const id = new ObjectId(request.params.id);
       const classObject = (await (await MongoHelper.getDB())
         .collection('classes')
-        .findOne({
-          _id: request.params.id,
-        })) as Class;
+        .findOne(
+          {
+            _id: id,
+          },
+          { projection: { humanReadable: 0 } }
+        )) as Class;
       if (classObject) {
-        response.send(classObject);
+        return response.send(classObject);
       } else {
-        next(new ClassNotFoundException(request.params.id));
+        return next(new ClassNotFoundException(request.params.id));
       }
     } catch (error) {
       console.log(error.stack);
-      next(new DBException());
+      return next(new DBException());
     }
   };
 
@@ -77,10 +84,14 @@ class ClassesController implements Controller {
     next: NextFunction
   ) => {
     try {
+      if (!ObjectId.isValid(request.params.id)) {
+        return next(new ClassNotFoundException(request.params.id));
+      }
+      const id = new ObjectId(request.params.id);
       const classObject = (await (await MongoHelper.getDB())
         .collection('classes')
         .findOne({
-          _id: request.params.id,
+          _id: id,
         })) as Class;
       if (classObject) {
         if (
@@ -110,16 +121,16 @@ class ClassesController implements Controller {
               delete user.activityLog_ids;
             });
           }
-          response.send(users);
+          return response.send(users);
         } else {
-          next(new UnauthorizedToViewClassException(request.params.id));
+          return next(new UnauthorizedToViewClassException(request.params.id));
         }
       } else {
-        next(new ClassNotFoundException(request.params.id));
+        return next(new ClassNotFoundException(request.params.id));
       }
     } catch (error) {
       console.log(error.stack);
-      next(new DBException());
+      return next(new DBException());
     }
   };
 
@@ -129,30 +140,34 @@ class ClassesController implements Controller {
     next: NextFunction
   ) => {
     try {
+      if (!ObjectId.isValid(request.params.id)) {
+        return next(new ClassNotFoundException(request.params.id));
+      }
+      const id = new ObjectId(request.params.id);
       const classObject = (await (await MongoHelper.getDB())
         .collection('classes')
         .findOne({
-          _id: request.params.id,
+          _id: id,
         })) as Class;
       if (classObject) {
         if (
           (request.user.class_ids as Array<ObjectId>).includes(classObject._id)
         ) {
           if (request.user.isTeacher) {
-            const classIdHash = { code: getHR(classObject._id.toHexString()) };
-            response.send(classIdHash);
+            const classIdHash = { code: classObject.humanReadable };
+            return response.send(classIdHash);
           } else {
-            next(new UserNotTeacherException());
+            return next(new UserNotTeacherException());
           }
         } else {
-          next(new UnauthorizedToViewClassException(request.params.id));
+          return next(new UnauthorizedToViewClassException(request.params.id));
         }
       } else {
-        next(new ClassNotFoundException(request.params.id));
+        return next(new ClassNotFoundException(request.params.id));
       }
     } catch (error) {
       console.log(error.stack);
-      next(new DBException());
+      return next(new DBException());
     }
   };
 }
