@@ -49,9 +49,7 @@
   "paths": {
     "/auth/login": {
       "post": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Authorize and get a token",
         "requestBody": {
           "description": "User's email and password",
@@ -80,10 +78,7 @@
                       "$ref": "#/components/schemas/TokenObject"
                     }
                   },
-                  "required": [
-                    "user",
-                    "token"
-                  ]
+                  "required": ["user", "token"]
                 }
               }
             }
@@ -102,9 +97,7 @@
     },
     "/auth/register": {
       "post": {
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Register a user",
         "requestBody": {
           "description": "User's data",
@@ -157,9 +150,7 @@
     },
     "/user": {
       "get": {
-        "tags": [
-          "user"
-        ],
+        "tags": ["user"],
         "summary": "Get current user's information",
         "responses": {
           "200": {
@@ -195,9 +186,7 @@
         }
       },
       "patch": {
-        "tags": [
-          "user"
-        ],
+        "tags": ["user"],
         "summary": "Update user's current information",
         "requestBody": {
           "description": "Partial user's data",
@@ -247,9 +236,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "user"
-        ],
+        "tags": ["user"],
         "summary": "Delete user's account",
         "responses": {
           "200": {
@@ -280,9 +267,7 @@
     },
     "/user/{userId}": {
       "get": {
-        "tags": [
-          "user"
-        ],
+        "tags": ["user"],
         "summary": "Get a user by ID",
         "parameters": [
           {
@@ -347,9 +332,7 @@
     },
     "/classes": {
       "get": {
-        "tags": [
-          "classes"
-        ],
+        "tags": ["classes"],
         "summary": "Get all classes",
         "responses": {
           "200": {
@@ -390,9 +373,7 @@
     },
     "/classess/{classId}": {
       "get": {
-        "tags": [
-          "classes"
-        ],
+        "tags": ["classes"],
         "summary": "Get a class by ID",
         "parameters": [
           {
@@ -444,9 +425,7 @@
     },
     "/classes/{classId}/users": {
       "get": {
-        "tags": [
-          "classes"
-        ],
+        "tags": ["classes"],
         "summary": "Get users from a class",
         "parameters": [
           {
@@ -511,9 +490,7 @@
     },
     "/classes/{classId}/code": {
       "get": {
-        "tags": [
-          "classes"
-        ],
+        "tags": ["classes"],
         "summary": "Generate a class-join code in human-readable format",
         "parameters": [
           {
@@ -584,9 +561,7 @@
     },
     "/activitylog": {
       "get": {
-        "tags": [
-          "activitylog"
-        ],
+        "tags": ["activitylog"],
         "summary": "Get all current user's activities",
         "parameters": [
           {
@@ -635,9 +610,7 @@
         }
       },
       "post": {
-        "tags": [
-          "activitylog"
-        ],
+        "tags": ["activitylog"],
         "summary": "Add a new activity",
         "requestBody": {
           "description": "An activity object to add",
@@ -706,9 +679,7 @@
     },
     "/activitylog/{activityId}": {
       "get": {
-        "tags": [
-          "activitylog"
-        ],
+        "tags": ["activitylog"],
         "summary": "Get a single activity by ID",
         "parameters": [
           {
@@ -761,9 +732,7 @@
         }
       },
       "patch": {
-        "tags": [
-          "activitylog"
-        ],
+        "tags": ["activitylog"],
         "summary": "Change a single activity",
         "parameters": [
           {
@@ -849,9 +818,7 @@
     },
     "/activitytypes": {
       "get": {
-        "tags": [
-          "activitytypes"
-        ],
+        "tags": ["activitytypes"],
         "summary": "Get all available activity types",
         "security": [],
         "responses": {
@@ -876,9 +843,7 @@
     },
     "/activitytypes/{activityTypeId}": {
       "get": {
-        "tags": [
-          "activitytypes"
-        ],
+        "tags": ["activitytypes"],
         "summary": "Get a single activity type specified by ID",
         "parameters": [
           {
@@ -1089,10 +1054,7 @@
             "description": "Exception message"
           }
         },
-        "required": [
-          "status",
-          "message"
-        ]
+        "required": ["status", "message"]
       },
       "ActivityType": {
         "type": "object",
@@ -1138,11 +1100,7 @@
             "example": "601bd55f22c26a2ef9298df3"
           }
         },
-        "required": [
-          "startDate",
-          "_id",
-          "activityType_id"
-        ]
+        "required": ["startDate", "_id", "activityType_id"]
       },
       "ActivityLogObject": {
         "type": "object",
@@ -1163,9 +1121,7 @@
             "example": "601bd55f22c26a2ef9298df3"
           }
         },
-        "required": [
-          "activityType_id"
-        ]
+        "required": ["activityType_id"]
       },
       "BasicUserInfo": {
         "type": "object",
@@ -1267,10 +1223,7 @@
                 "example": 60
               }
             },
-            "required": [
-              "email",
-              "dateCreated"
-            ]
+            "required": ["email", "dateCreated"]
           }
         ]
       },
@@ -1293,10 +1246,7 @@
             "example": "qwerty2137"
           }
         },
-        "required": [
-          "email",
-          "password"
-        ]
+        "required": ["email", "password"]
       },
       "RegistrationData": {
         "allOf": [
@@ -1342,11 +1292,7 @@
                 "example": false
               }
             },
-            "required": [
-              "name",
-              "surname",
-              "classId"
-            ]
+            "required": ["name", "surname", "classId"]
           }
         ]
       },
