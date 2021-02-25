@@ -93,13 +93,16 @@ class AuthenticationController implements Controller {
         }
         userInsertObject.class_ids = [classObj._id]
       }
-      const user = await this.users.insertOne(userInsertObject)
-      delete userInsertObject.hashedPassword
-      userInsertObject._id = user.insertedId
-      const registeredUser = await populateUser(
-        (userInsertObject as unknown) as User
-      )
-      return response.status(201).send(registeredUser)
+      const userInsert = await this.users.insertOne(userInsertObject)
+      const user = (await this.users.findOne({
+        _id: userInsert.insertedId,
+      })) as User
+      const registeredUser = await populateUser(user)
+      const tokenData = this.createToken(user)
+      delete registeredUser.hashedPassword
+      return response
+        .status(201)
+        .send({ user: registeredUser, token: tokenData.token })
     } catch (err) {
       console.log(err.stack)
       return next(new DBException())
@@ -113,7 +116,7 @@ class AuthenticationController implements Controller {
   ) => {
     const logInData: LogInDto = request.body
     try {
-      const user = (await this.users.findOne({
+      let user = (await this.users.findOne({
         email: logInData.email,
       })) as User
       if (!user) {
@@ -126,6 +129,7 @@ class AuthenticationController implements Controller {
       if (!isPasswordMatching) {
         return next(new WrongCredentialsException())
       }
+      user = await populateUser(user)
       user.hashedPassword = undefined
       const tokenData = this.createToken(user)
       return response.send({ user, token: tokenData.token })

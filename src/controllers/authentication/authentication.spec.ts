@@ -18,8 +18,9 @@ describe('AUTH', () => {
           email: 'newpupil@example.com',
         })
         .then(async (res) => {
+          chai.expect(res.body).to.have.keys(['user', 'token'])
           chai
-            .expect(res.body)
+            .expect(res.body.user)
             .to.have.keys([
               'name',
               'surname',
@@ -31,11 +32,11 @@ describe('AUTH', () => {
               '_id',
             ])
           chai
-            .expect(res.body.class_ids[0])
+            .expect(res.body.user.class_ids[0])
             .to.have.keys(['_id', 'isActive', 'name', 'humanReadable'])
           chai.expect(res).to.be.json
           chai.expect(res).to.have.status(201)
-          chai.expect(res.body.isTeacher).to.equal(false)
+          chai.expect(res.body.user.isTeacher).to.equal(false)
         })
     })
     it('Should register a teacher and return', async () => {
@@ -50,8 +51,9 @@ describe('AUTH', () => {
           email: 'newteacher@example.com',
         })
         .then(async (res) => {
+          chai.expect(res.body).to.have.keys(['user', 'token'])
           chai
-            .expect(res.body)
+            .expect(res.body.user)
             .to.have.keys([
               'name',
               'surname',
@@ -64,7 +66,7 @@ describe('AUTH', () => {
             ])
           chai.expect(res).to.be.json
           chai.expect(res).to.have.status(201)
-          chai.expect(res.body.isTeacher).to.equal(true)
+          chai.expect(res.body.user.isTeacher).to.equal(true)
         })
     })
     it('Should return the NoClassException', async () => {
