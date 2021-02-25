@@ -13,8 +13,11 @@ import { MongoHelper } from '../../../utils/mongo.helper';
 import { ObjectId } from 'bson';
 import { getHR } from 'reversible-human-readable-id';
 import CreateClassDto from './class.dto';
+import JoinClassDto from './join.dto';
 import validationMiddleware from '../../../middleware/validation.middleware';
 import UserNotFoundException from '../../../exceptions/UserNotFoundException';
+import UserIsTeacherException from '../../../exceptions/UserIsTeacherException';
+import UserAlreadyInClassException from '../../../exceptions/UserAlreadyInClassException';
 
 class ClassesController implements Controller {
   public path = '/classes';
@@ -32,13 +35,23 @@ class ClassesController implements Controller {
       authMiddleware,
       this.getClassUsers
     );
-    this.router.delete(`${this.path}/:id/users/:uid`, authMiddleware);
+    this.router.delete(
+      `${this.path}/:id/users/:uid`,
+      authMiddleware,
+      this.removeUserFromClass
+    );
     this.router.get(`${this.path}/:id/code`, authMiddleware, this.genClassCode);
     this.router.post(
       this.path,
       authMiddleware,
       validationMiddleware(CreateClassDto),
       this.createClass
+    );
+    this.router.put(
+      this.path,
+      authMiddleware,
+      validationMiddleware(JoinClassDto),
+      this.joinClass
     );
   }
 
@@ -249,6 +262,45 @@ class ClassesController implements Controller {
         .collection('classes')
         .findOne({ _id: insertResult.insertedId })) as Class;
       return response.status(201).send(createdClass);
+    } catch (error) {
+      console.log(error.stack);
+      return next(new DBException());
+    }
+  };
+
+  private joinClass = async (
+    request: RequestWithUser,
+    response: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const hr: JoinClassDto = request.body;
+      if (request.user.isTeacher) {
+        return next(new UserIsTeacherException());
+      }
+      const classCount = await (await MongoHelper.getDB())
+        .collection('classes')
+        .find({ humanReadable: hr.humanReadable })
+        .limit(1)
+        .count();
+      if (classCount === 0) {
+        return next(new ClassNotFoundException(hr.humanReadable));
+      }
+      const classObj = (await (await MongoHelper.getDB())
+        .collection('classes')
+        .findOne({ humanReadable: hr.humanReadable })) as Class;
+      if ((request.user.class_ids as Array<ObjectId>).includes(classObj._id)) {
+        return next(
+          new UserAlreadyInClassException(classObj._id.toHexString())
+        );
+      }
+      await (await MongoHelper.getDB())
+        .collection('users')
+        .updateOne(
+          { _id: request.user._id },
+          { $push: { class_ids: classObj._id } }
+        );
+      return this.getAllClasses;
     } catch (error) {
       console.log(error.stack);
       return next(new DBException());
