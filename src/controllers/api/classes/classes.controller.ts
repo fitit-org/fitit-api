@@ -1,63 +1,63 @@
-import Controller from '../../../types/controller.interface';
-import { Router, Response, NextFunction } from 'express';
-import RequestWithUser from '../../../types/requestWithUser.interface';
-import authMiddleware from '../../../middleware/auth.middleware';
-import ClassNotFoundException from '../../../exceptions/ClassNotFoundException';
-import UnauthorizedToViewClassException from '../../../exceptions/UnauthorizedToViewClassException';
-import DBException from '../../../exceptions/DBException';
-import UserNotTeacherException from '../../../exceptions/UserNotTeacherException';
-import Class from '../../../types/class.interface';
-import User from '../../../types/user.interface';
-import { populateUser, popualateUsers } from '../../../utils/db';
-import { ObjectId } from 'bson';
-import { getHR } from 'reversible-human-readable-id';
-import CreateClassDto from './class.dto';
-import JoinClassDto from './join.dto';
-import validationMiddleware from '../../../middleware/validation.middleware';
-import UserNotFoundException from '../../../exceptions/UserNotFoundException';
-import UserIsTeacherException from '../../../exceptions/UserIsTeacherException';
-import UserAlreadyInClassException from '../../../exceptions/UserAlreadyInClassException';
-import { Db, Collection } from 'mongodb';
+import Controller from '../../../types/controller.interface'
+import { Router, Response, NextFunction } from 'express'
+import RequestWithUser from '../../../types/requestWithUser.interface'
+import authMiddleware from '../../../middleware/auth.middleware'
+import ClassNotFoundException from '../../../exceptions/ClassNotFoundException'
+import UnauthorizedToViewClassException from '../../../exceptions/UnauthorizedToViewClassException'
+import DBException from '../../../exceptions/DBException'
+import UserNotTeacherException from '../../../exceptions/UserNotTeacherException'
+import Class from '../../../types/class.interface'
+import User from '../../../types/user.interface'
+import { populateUser, popualateUsers } from '../../../utils/db'
+import { ObjectId } from 'bson'
+import { getHR } from 'reversible-human-readable-id'
+import CreateClassDto from './class.dto'
+import JoinClassDto from './join.dto'
+import validationMiddleware from '../../../middleware/validation.middleware'
+import UserNotFoundException from '../../../exceptions/UserNotFoundException'
+import UserIsTeacherException from '../../../exceptions/UserIsTeacherException'
+import UserAlreadyInClassException from '../../../exceptions/UserAlreadyInClassException'
+import { Db, Collection } from 'mongodb'
 
 class ClassesController implements Controller {
-  public path = '/classes';
-  public router = Router();
+  public path = '/classes'
+  public router = Router()
 
-  private classes: Collection<unknown>;
-  private users: Collection<unknown>;
+  private classes: Collection<unknown>
+  private users: Collection<unknown>
 
   constructor(db: Db) {
-    this.classes = db.collection('classes');
-    this.users = db.collection('users');
-    this.initializeRoutes();
+    this.classes = db.collection('classes')
+    this.users = db.collection('users')
+    this.initializeRoutes()
   }
 
   private initializeRoutes() {
-    this.router.get(this.path, authMiddleware, this.getAllClasses);
-    this.router.get(`${this.path}/:id`, authMiddleware, this.getClassById);
+    this.router.get(this.path, authMiddleware, this.getAllClasses)
+    this.router.get(`${this.path}/:id`, authMiddleware, this.getClassById)
     this.router.get(
       `${this.path}/:id/users`,
       authMiddleware,
       this.getClassUsers
-    );
+    )
     this.router.delete(
       `${this.path}/:id/users/:uid`,
       authMiddleware,
       this.removeUserFromClass
-    );
-    this.router.get(`${this.path}/:id/code`, authMiddleware, this.genClassCode);
+    )
+    this.router.get(`${this.path}/:id/code`, authMiddleware, this.genClassCode)
     this.router.post(
       this.path,
       authMiddleware,
       validationMiddleware(CreateClassDto),
       this.createClass
-    );
+    )
     this.router.put(
       this.path,
       authMiddleware,
       validationMiddleware(JoinClassDto),
       this.joinClass
-    );
+    )
   }
 
   private getAllClasses = async (
@@ -75,8 +75,8 @@ class ClassesController implements Controller {
           },
           { projection: { humanReadable: 0 } }
         )
-        .toArray()) as Array<Class>;
-      let users: Array<User>;
+        .toArray()) as Array<Class>
+      let users: Array<User>
       if (request.user.isTeacher) {
         users = (await this.users
           .find(
@@ -94,9 +94,9 @@ class ClassesController implements Controller {
               },
             }
           )
-          .toArray()) as Array<User>;
-        users = await popualateUsers(users, false, true);
-        return response.send({ classes: classes, users: users });
+          .toArray()) as Array<User>
+        users = await popualateUsers(users, false, true)
+        return response.send({ classes: classes, users: users })
       } else {
         users = (await this.users
           .find(
@@ -113,14 +113,14 @@ class ClassesController implements Controller {
               },
             }
           )
-          .toArray()) as Array<User>;
-        return response.send({ classes: classes, users: users });
+          .toArray()) as Array<User>
+        return response.send({ classes: classes, users: users })
       }
     } catch (error) {
-      console.log(error.stack);
-      return next(new DBException());
+      console.log(error.stack)
+      return next(new DBException())
     }
-  };
+  }
 
   private getClassById = async (
     request: RequestWithUser,
@@ -129,25 +129,25 @@ class ClassesController implements Controller {
   ) => {
     try {
       if (!ObjectId.isValid(request.params.id)) {
-        return next(new ClassNotFoundException(request.params.id));
+        return next(new ClassNotFoundException(request.params.id))
       }
-      const id = new ObjectId(request.params.id);
-      const classCount = await this.classes.find({ _id: id }).limit(1).count();
+      const id = new ObjectId(request.params.id)
+      const classCount = await this.classes.find({ _id: id }).limit(1).count()
       if (classCount === 0) {
-        return next(new ClassNotFoundException(request.params.id));
+        return next(new ClassNotFoundException(request.params.id))
       }
       const classObject = (await this.classes.findOne(
         {
           _id: id,
         },
         { projection: { humanReadable: 0 } }
-      )) as Class;
-      return response.send(classObject);
+      )) as Class
+      return response.send(classObject)
     } catch (error) {
-      console.log(error.stack);
-      return next(new DBException());
+      console.log(error.stack)
+      return next(new DBException())
     }
-  };
+  }
 
   private getClassUsers = async (
     request: RequestWithUser,
@@ -156,15 +156,15 @@ class ClassesController implements Controller {
   ) => {
     try {
       if (!ObjectId.isValid(request.params.id)) {
-        return next(new ClassNotFoundException(request.params.id));
+        return next(new ClassNotFoundException(request.params.id))
       }
-      const id = new ObjectId(request.params.id);
-      const classCount = await this.classes.find({ _id: id }).limit(1).count();
+      const id = new ObjectId(request.params.id)
+      const classCount = await this.classes.find({ _id: id }).limit(1).count()
       if (classCount === 0) {
-        return next(new ClassNotFoundException(request.params.id));
+        return next(new ClassNotFoundException(request.params.id))
       }
       if (!(request.user.class_ids as Array<ObjectId>).includes(id)) {
-        return next(new UnauthorizedToViewClassException(request.params.id));
+        return next(new UnauthorizedToViewClassException(request.params.id))
       }
       const users = (await this.users
         .find(
@@ -179,22 +179,22 @@ class ClassesController implements Controller {
             },
           }
         )
-        .toArray()) as Array<User>;
+        .toArray()) as Array<User>
       if (request.user.isTeacher) {
         for (let user of users) {
-          user = await populateUser(user, false);
+          user = await populateUser(user, false)
         }
       } else {
         users.forEach((user) => {
-          delete user.activityLog_ids;
-        });
+          delete user.activityLog_ids
+        })
       }
-      return response.send(users);
+      return response.send(users)
     } catch (error) {
-      console.log(error.stack);
-      return next(new DBException());
+      console.log(error.stack)
+      return next(new DBException())
     }
-  };
+  }
 
   private genClassCode = async (
     request: RequestWithUser,
@@ -203,27 +203,27 @@ class ClassesController implements Controller {
   ) => {
     try {
       if (!ObjectId.isValid(request.params.id)) {
-        return next(new ClassNotFoundException(request.params.id));
+        return next(new ClassNotFoundException(request.params.id))
       }
-      const id = new ObjectId(request.params.id);
-      const classCount = await this.classes.find({ _id: id }).limit(1).count();
+      const id = new ObjectId(request.params.id)
+      const classCount = await this.classes.find({ _id: id }).limit(1).count()
       if (classCount === 0) {
-        return next(new ClassNotFoundException(request.params.id));
+        return next(new ClassNotFoundException(request.params.id))
       }
       if (!(request.user.class_ids as Array<ObjectId>).includes(id)) {
-        return next(new UnauthorizedToViewClassException(request.params.id));
+        return next(new UnauthorizedToViewClassException(request.params.id))
       }
       if (!request.user.isTeacher) {
-        return next(new UserNotTeacherException());
+        return next(new UserNotTeacherException())
       }
       const classCode = ((await this.classes.findOne({ _id: id })) as Class)
-        .humanReadable;
-      return response.send({ code: classCode });
+        .humanReadable
+      return response.send({ code: classCode })
     } catch (error) {
-      console.log(error.stack);
-      return next(new DBException());
+      console.log(error.stack)
+      return next(new DBException())
     }
-  };
+  }
 
   private createClass = async (
     request: RequestWithUser,
@@ -231,29 +231,29 @@ class ClassesController implements Controller {
     next: NextFunction
   ) => {
     try {
-      const classData: CreateClassDto = request.body;
+      const classData: CreateClassDto = request.body
       if (!request.user.isTeacher) {
-        return next(new UserNotTeacherException());
+        return next(new UserNotTeacherException())
       }
-      const code = getHR(classData.name);
+      const code = getHR(classData.name)
       const insertResult = await (this.classes as Collection<{
-        name: string;
-        code: string;
-        isActive: boolean;
+        name: string
+        code: string
+        isActive: boolean
       }>).insertOne({
         name: classData.name,
         code: code,
         isActive: true,
-      });
+      })
       const createdClass = (await this.classes.findOne({
         _id: insertResult.insertedId,
-      })) as Class;
-      return response.status(201).send(createdClass);
+      })) as Class
+      return response.status(201).send(createdClass)
     } catch (error) {
-      console.log(error.stack);
-      return next(new DBException());
+      console.log(error.stack)
+      return next(new DBException())
     }
-  };
+  }
 
   private joinClass = async (
     request: RequestWithUser,
@@ -261,35 +261,33 @@ class ClassesController implements Controller {
     next: NextFunction
   ) => {
     try {
-      const hr: JoinClassDto = request.body;
+      const hr: JoinClassDto = request.body
       if (request.user.isTeacher) {
-        return next(new UserIsTeacherException());
+        return next(new UserIsTeacherException())
       }
       const classCount = await this.classes
         .find({ humanReadable: hr.humanReadable })
         .limit(1)
-        .count();
+        .count()
       if (classCount === 0) {
-        return next(new ClassNotFoundException(hr.humanReadable));
+        return next(new ClassNotFoundException(hr.humanReadable))
       }
       const classObj = (await this.classes.findOne({
         humanReadable: hr.humanReadable,
-      })) as Class;
+      })) as Class
       if ((request.user.class_ids as Array<ObjectId>).includes(classObj._id)) {
-        return next(
-          new UserAlreadyInClassException(classObj._id.toHexString())
-        );
+        return next(new UserAlreadyInClassException(classObj._id.toHexString()))
       }
       await this.users.updateOne(
         { _id: request.user._id },
         { $push: { class_ids: classObj._id } }
-      );
-      return this.getAllClasses;
+      )
+      return this.getAllClasses
     } catch (error) {
-      console.log(error.stack);
-      return next(new DBException());
+      console.log(error.stack)
+      return next(new DBException())
     }
-  };
+  }
 
   private removeUserFromClass = async (
     request: RequestWithUser,
@@ -298,29 +296,29 @@ class ClassesController implements Controller {
   ) => {
     try {
       if (!ObjectId.isValid(request.params.id)) {
-        return next(new ClassNotFoundException(request.params.id));
+        return next(new ClassNotFoundException(request.params.id))
       }
       if (!ObjectId.isValid(request.params.uid)) {
-        return next(new UserNotFoundException(request.params.uid));
+        return next(new UserNotFoundException(request.params.uid))
       }
-      const id = new ObjectId(request.params.id);
-      const uid = new ObjectId(request.params.uid);
-      const classCount = await this.classes.find({ _id: id }).limit(1).count();
+      const id = new ObjectId(request.params.id)
+      const uid = new ObjectId(request.params.uid)
+      const classCount = await this.classes.find({ _id: id }).limit(1).count()
       if (classCount === 0) {
-        return next(new ClassNotFoundException(request.params.id));
+        return next(new ClassNotFoundException(request.params.id))
       }
-      const userCount = await this.users.find({ _id: uid }).limit(1).count();
+      const userCount = await this.users.find({ _id: uid }).limit(1).count()
       if (userCount === 0) {
-        return next(new UserNotFoundException(request.params.uid));
+        return next(new UserNotFoundException(request.params.uid))
       }
       if (!(request.user.class_ids as Array<ObjectId>).includes(id)) {
-        return next(new UnauthorizedToViewClassException(request.params.id));
+        return next(new UnauthorizedToViewClassException(request.params.id))
       }
       if (!request.user.isTeacher) {
-        return next(new UserNotTeacherException());
+        return next(new UserNotTeacherException())
       }
-      await this.users.updateOne({ _id: uid }, { $pull: { class_ids: id } });
-      const classResponse = (await this.classes.findOne({ _id: id })) as Class;
+      await this.users.updateOne({ _id: uid }, { $pull: { class_ids: id } })
+      const classResponse = (await this.classes.findOne({ _id: id })) as Class
       const users = (await this.users
         .find(
           {
@@ -337,15 +335,13 @@ class ClassesController implements Controller {
             },
           }
         )
-        .toArray()) as Array<User>;
-      return response
-        .status(204)
-        .send({ classes: classResponse, users: users });
+        .toArray()) as Array<User>
+      return response.status(204).send({ classes: classResponse, users: users })
     } catch (error) {
-      console.log(error.stack);
-      return next(new DBException());
+      console.log(error.stack)
+      return next(new DBException())
     }
-  };
+  }
 }
 
-export default ClassesController;
+export default ClassesController

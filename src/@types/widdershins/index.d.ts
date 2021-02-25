@@ -1,1 +1,1 @@
-declare module 'widdershins';
+declare module 'widdershins'

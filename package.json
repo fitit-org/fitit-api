@@ -9,7 +9,7 @@
     "test": "mocha -r ts-node/register -r 'src/tests/hooks.ts' 'src/**/*.spec.ts' --recursive --timeout 60000 --exit",
     "gen-docs": "node genDocs.js",
     "lint": "eslint 'src/**/*.ts'",
-    "lint:fix": "eslint ./src --fix"
+    "lint:fix": "eslint 'src/**/*.ts' --fix"
   },
   "repository": {
     "type": "git",

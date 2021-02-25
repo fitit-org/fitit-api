@@ -1,4 +1,4 @@
-import { ObjectId, Double } from 'bson';
+import { ObjectId, Double } from 'bson'
 
 const validator = {
   validator: {
@@ -15,7 +15,7 @@ const validator = {
       },
     },
   },
-};
+}
 
 const data = [
   {
@@ -23,9 +23,9 @@ const data = [
     kcalPerHour: new Double(600),
     name: 'Kolarstwo',
   },
-];
+]
 
 export default {
   validator,
   data,
-};
+}

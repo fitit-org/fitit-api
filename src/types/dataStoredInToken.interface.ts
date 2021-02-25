@@ -1,7 +1,7 @@
-import { ObjectId } from 'bson';
+import { ObjectId } from 'bson'
 
 interface DataStoredInToken {
-  _id: ObjectId;
+  _id: ObjectId
 }
 
-export default DataStoredInToken;
+export default DataStoredInToken

@@ -1,9 +1,9 @@
-import HttpException from './HttpException';
+import HttpException from './HttpException'
 
 class UserAlreadyInClassException extends HttpException {
   constructor(id: string) {
-    super(400, `You are already in class with id ${id}`);
+    super(400, `You are already in class with id ${id}`)
   }
 }
 
-export default UserAlreadyInClassException;
+export default UserAlreadyInClassException

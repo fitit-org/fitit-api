@@ -1,8 +1,8 @@
-import { IsString } from 'class-validator';
+import { IsString } from 'class-validator'
 
 class JoinClassDto {
   @IsString()
-  public humanReadable: string;
+  public humanReadable: string
 }
 
-export default JoinClassDto;
+export default JoinClassDto

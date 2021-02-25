@@ -1,8 +1,8 @@
-import chai from 'chai';
-import chaiHttp from 'chai-http';
+import chai from 'chai'
+import chaiHttp from 'chai-http'
 
-chai.use(chaiHttp);
-const apiURL = '127.0.0.1:3000';
+chai.use(chaiHttp)
+const apiURL = '127.0.0.1:3000'
 
 describe('/api/v1/users', () => {
   describe('/ GET', () => {
@@ -15,7 +15,7 @@ describe('/api/v1/users', () => {
           password: '2137',
         })
         .end((err, res) => {
-          const token: string = res.body.token;
+          const token: string = res.body.token
           chai
             .request(apiURL)
             .get('/api/v1/users')
@@ -36,14 +36,14 @@ describe('/api/v1/users', () => {
                   'weight',
                   'name',
                   'surname',
-                ]);
-              chai.expect(res).to.be.json;
-              chai.expect(res).to.have.status(200);
-              done();
-            });
-        });
-    });
-  });
+                ])
+              chai.expect(res).to.be.json
+              chai.expect(res).to.have.status(200)
+              done()
+            })
+        })
+    })
+  })
   describe('/:id GET', () => {
     it('Should return current user as pupil', (done) => {
       chai
@@ -54,8 +54,8 @@ describe('/api/v1/users', () => {
           password: '2137',
         })
         .end((err, res) => {
-          const token: string = res.body.token;
-          const userId: string = res.body.user._id;
+          const token: string = res.body.token
+          const userId: string = res.body.user._id
           chai
             .request(apiURL)
             .get(`/api/v1/users/${userId}`)
@@ -76,13 +76,13 @@ describe('/api/v1/users', () => {
                   'weight',
                   'name',
                   'surname',
-                ]);
-              chai.expect(res).to.be.json;
-              chai.expect(res).to.have.status(200);
-              done();
-            });
-        });
-    });
+                ])
+              chai.expect(res).to.be.json
+              chai.expect(res).to.have.status(200)
+              done()
+            })
+        })
+    })
     it('Should return a pupil as their teacher', (done) => {
       chai
         .request(apiURL)
@@ -92,7 +92,7 @@ describe('/api/v1/users', () => {
           password: '2137',
         })
         .end((err, res) => {
-          const token: string = res.body.token;
+          const token: string = res.body.token
           chai
             .request(apiURL)
             .get(`/api/v1/users/601be28e50364b654dec42cf`)
@@ -109,13 +109,13 @@ describe('/api/v1/users', () => {
                   'activityLog_ids',
                   'name',
                   'surname',
-                ]);
-              chai.expect(res).to.be.json;
-              chai.expect(res).to.have.status(200);
-              done();
-            });
-        });
-    });
+                ])
+              chai.expect(res).to.be.json
+              chai.expect(res).to.have.status(200)
+              done()
+            })
+        })
+    })
     it('Should return a pupil as their class member', (done) => {
       chai
         .request(apiURL)
@@ -125,7 +125,7 @@ describe('/api/v1/users', () => {
           password: '2137',
         })
         .end((err, res) => {
-          const token: string = res.body.token;
+          const token: string = res.body.token
           chai
             .request(apiURL)
             .get(`/api/v1/users/601be28e50364b654dec42cf`)
@@ -141,13 +141,13 @@ describe('/api/v1/users', () => {
                   'dateCreated',
                   'name',
                   'surname',
-                ]);
-              chai.expect(res).to.be.json;
-              chai.expect(res).to.have.status(200);
-              done();
-            });
-        });
-    });
+                ])
+              chai.expect(res).to.be.json
+              chai.expect(res).to.have.status(200)
+              done()
+            })
+        })
+    })
     it('Should return UserNotFoundException', (done) => {
       chai
         .request(apiURL)
@@ -157,22 +157,22 @@ describe('/api/v1/users', () => {
           password: '2137',
         })
         .end((err, res) => {
-          const token: string = res.body.token;
+          const token: string = res.body.token
           chai
             .request(apiURL)
             .get(`/api/v1/users/601be28e50364b654dec1111`)
             .set({ Authorization: `Bearer ${token}` })
             .end((err, res) => {
-              chai.expect(res).to.be.json;
-              chai.expect(res).to.have.status(404);
+              chai.expect(res).to.be.json
+              chai.expect(res).to.have.status(404)
               chai.expect(res.body).to.deep.equal({
                 status: 404,
                 message: 'User with id 601be28e50364b654dec1111 not found',
-              });
-              done();
-            });
-        });
-    });
+              })
+              done()
+            })
+        })
+    })
     it('Should return UnauthorizedToViewUserException', (done) => {
       chai
         .request(apiURL)
@@ -182,24 +182,24 @@ describe('/api/v1/users', () => {
           password: '2137',
         })
         .end((err, res) => {
-          const token: string = res.body.token;
+          const token: string = res.body.token
           chai
             .request(apiURL)
             .get(`/api/v1/users/601be28e50364b654dec42cf`)
             .set({ Authorization: `Bearer ${token}` })
             .end((err, res) => {
-              chai.expect(res).to.be.json;
-              chai.expect(res).to.have.status(403);
+              chai.expect(res).to.be.json
+              chai.expect(res).to.have.status(403)
               chai.expect(res.body).to.deep.equal({
                 status: 403,
                 message:
                   'Unauthorized to view user with id 601be28e50364b654dec42cf',
-              });
-              done();
-            });
-        });
-    });
-  });
+              })
+              done()
+            })
+        })
+    })
+  })
   describe('/ PATCH', () => {
     it('Should modify user data', (done) => {
       chai
@@ -210,7 +210,7 @@ describe('/api/v1/users', () => {
           password: '2137',
         })
         .end((err, res) => {
-          const token: string = res.body.token;
+          const token: string = res.body.token
           chai
             .request(apiURL)
             .patch(`/api/v1/users`)
@@ -232,15 +232,15 @@ describe('/api/v1/users', () => {
                   'weight',
                   'name',
                   'surname',
-                ]);
-              chai.expect(res.body.surname).to.equal('ModifiedPupil');
-              chai.expect(res).to.be.json;
-              chai.expect(res).to.have.status(200);
-              done();
-            });
-        });
-    });
-  });
+                ])
+              chai.expect(res.body.surname).to.equal('ModifiedPupil')
+              chai.expect(res).to.be.json
+              chai.expect(res).to.have.status(200)
+              done()
+            })
+        })
+    })
+  })
   describe('/ DELETE', () => {
     it('Should remove user', (done) => {
       chai
@@ -251,16 +251,16 @@ describe('/api/v1/users', () => {
           password: '2137',
         })
         .end((err, res) => {
-          const token: string = res.body.token;
+          const token: string = res.body.token
           chai
             .request(apiURL)
             .delete(`/api/v1/users`)
             .set({ Authorization: `Bearer ${token}` })
             .end((err, res) => {
-              chai.expect(res).to.have.status(204);
-              done();
-            });
-        });
-    });
-  });
-});
+              chai.expect(res).to.have.status(204)
+              done()
+            })
+        })
+    })
+  })
+})

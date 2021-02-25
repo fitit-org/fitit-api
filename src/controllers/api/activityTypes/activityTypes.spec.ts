@@ -1,8 +1,8 @@
-import chai from 'chai';
-import chaiHttp from 'chai-http';
+import chai from 'chai'
+import chaiHttp from 'chai-http'
 
-chai.use(chaiHttp);
-const apiURL = '127.0.0.1:3000';
+chai.use(chaiHttp)
+const apiURL = '127.0.0.1:3000'
 
 describe('/api/v1/activitytypes', () => {
   describe('/ GET', () => {
@@ -17,12 +17,12 @@ describe('/api/v1/activitytypes', () => {
               kcalPerHour: 600,
               name: 'Kolarstwo',
             },
-          ]);
-          chai.expect(res).to.be.json;
-          chai.expect(res).to.have.status(200);
-        });
-    });
-  });
+          ])
+          chai.expect(res).to.be.json
+          chai.expect(res).to.have.status(200)
+        })
+    })
+  })
   describe('/:id GET', () => {
     it('Should get specified activity type', async () => {
       return chai
@@ -33,11 +33,11 @@ describe('/api/v1/activitytypes', () => {
             _id: '601bd8d722c26a2ef9298df7',
             kcalPerHour: 600,
             name: 'Kolarstwo',
-          });
-          chai.expect(res).to.be.json;
-          chai.expect(res).to.have.status(200);
-        });
-    });
+          })
+          chai.expect(res).to.be.json
+          chai.expect(res).to.have.status(200)
+        })
+    })
     it('Should return error', async () => {
       return chai
         .request(apiURL)
@@ -46,10 +46,10 @@ describe('/api/v1/activitytypes', () => {
           chai.expect(res.body).to.deep.equal({
             status: 404,
             message: 'Activity type with id 2137 not found',
-          });
-          chai.expect(res).to.be.json;
-          chai.expect(res).to.have.status(404);
-        });
-    });
-  });
-});
+          })
+          chai.expect(res).to.be.json
+          chai.expect(res).to.have.status(404)
+        })
+    })
+  })
+})

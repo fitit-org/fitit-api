@@ -1,9 +1,9 @@
-import User from '../types/user.interface';
-import ActivityLog from '../types/activityLog.interface';
-import ActivityType from '../types/activityType.interface';
-import Class from '../types/class.interface';
-import { ObjectId } from 'bson';
-import { MongoHelper } from './mongo.helper';
+import User from '../types/user.interface'
+import ActivityLog from '../types/activityLog.interface'
+import ActivityType from '../types/activityType.interface'
+import Class from '../types/class.interface'
+import { ObjectId } from 'bson'
+import { MongoHelper } from './mongo.helper'
 
 export async function popualateUsers(
   users: Array<User>,
@@ -16,11 +16,11 @@ export async function popualateUsers(
         user,
         populateClass,
         populateActivityTypes
-      );
-      user = populatedUser;
+      )
+      user = populatedUser
     })
-  );
-  return users;
+  )
+  return users
 }
 
 export async function populateUser(
@@ -28,7 +28,7 @@ export async function populateUser(
   populateClass = true,
   populateActivityTypes = true
 ): Promise<User> {
-  const userObj = { ...user };
+  const userObj = { ...user }
   if (user.activityLog_ids) {
     userObj.activityLog_ids = (await (await MongoHelper.getDB())
       .collection('activityLogs')
@@ -37,11 +37,11 @@ export async function populateUser(
           $in: user.activityLog_ids,
         },
       })
-      .toArray()) as Array<ActivityLog>;
+      .toArray()) as Array<ActivityLog>
     if (populateActivityTypes) {
       userObj.activityLog_ids = await populateActivities(
         userObj.activityLog_ids
-      );
+      )
     }
   }
   if (populateClass) {
@@ -52,9 +52,9 @@ export async function populateUser(
           $in: user.class_ids,
         },
       })
-      .toArray()) as Array<Class>;
+      .toArray()) as Array<Class>
   }
-  return userObj;
+  return userObj
 }
 
 export async function populateActivities(
@@ -62,11 +62,11 @@ export async function populateActivities(
 ): Promise<Array<ActivityLog>> {
   await Promise.all(
     activities.map(async (act) => {
-      const populatedActivity = await populateActivity(act);
-      act = populatedActivity;
+      const populatedActivity = await populateActivity(act)
+      act = populatedActivity
     })
-  );
-  return activities;
+  )
+  return activities
 }
 
 export async function populateActivity(act: ActivityLog): Promise<ActivityLog> {
@@ -74,6 +74,6 @@ export async function populateActivity(act: ActivityLog): Promise<ActivityLog> {
     .collection('activityTypes')
     .findOne({
       _id: act.activityType_id as ObjectId,
-    })) as ActivityType;
-  return act;
+    })) as ActivityType
+  return act
 }

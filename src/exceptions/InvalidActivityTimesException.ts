@@ -1,9 +1,9 @@
-import HttpException from './HttpException';
+import HttpException from './HttpException'
 
 class InvalidActivityTimesException extends HttpException {
   constructor() {
-    super(400, `Invalid activity times`);
+    super(400, `Invalid activity times`)
   }
 }
 
-export default InvalidActivityTimesException;
+export default InvalidActivityTimesException

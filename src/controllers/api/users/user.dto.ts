@@ -8,47 +8,47 @@ import {
   MinLength,
   Min,
   MaxDate,
-} from 'class-validator';
+} from 'class-validator'
 
 const strongPassRegex = new RegExp(
   '^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])'
-);
+)
 
 class CreateUserDto {
   @MinLength(3)
   @IsString()
-  public name: string;
+  public name: string
 
   @MinLength(3)
   @IsString()
-  public surname: string;
+  public surname: string
 
   @IsString()
   @MinLength(10)
   @Matches(strongPassRegex)
-  public password: string;
+  public password: string
 
   @IsString()
-  public classId: string;
+  public classId: string
 
   @IsEmail()
   @IsString()
-  public email: string;
+  public email: string
 
   @IsOptional()
   @IsDateString()
   @MaxDate(new Date())
-  public birthDate?: string;
+  public birthDate?: string
 
   @IsOptional()
   @IsNumber()
   @Min(1)
-  public height?: number;
+  public height?: number
 
   @IsOptional()
   @IsNumber()
   @Min(1)
-  public weight?: number;
+  public weight?: number
 }
 
-export default CreateUserDto;
+export default CreateUserDto

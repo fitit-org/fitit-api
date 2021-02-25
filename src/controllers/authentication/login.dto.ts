@@ -1,12 +1,12 @@
-import { IsEmail, IsString } from 'class-validator';
+import { IsEmail, IsString } from 'class-validator'
 
 class LogInDto {
   @IsString()
   @IsEmail()
-  public email: string;
+  public email: string
 
   @IsString()
-  public password: string;
+  public password: string
 }
 
-export default LogInDto;
+export default LogInDto

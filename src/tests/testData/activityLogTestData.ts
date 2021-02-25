@@ -1,4 +1,4 @@
-import { ObjectId } from 'bson';
+import { ObjectId } from 'bson'
 
 const validator = {
   validator: {
@@ -18,7 +18,7 @@ const validator = {
       },
     },
   },
-};
+}
 
 const data = [
   {
@@ -32,9 +32,9 @@ const data = [
     endDate: new Date('2021-02-05T12:58:18.000+00:00'),
     activityType_id: new ObjectId('601bd8d722c26a2ef9298df7'),
   },
-];
+]
 
 export default {
   validator,
   data,
-};
+}

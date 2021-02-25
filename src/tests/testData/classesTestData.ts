@@ -1,4 +1,4 @@
-import { ObjectId } from 'bson';
+import { ObjectId } from 'bson'
 
 const validator = {
   validator: {
@@ -18,7 +18,7 @@ const validator = {
       },
     },
   },
-};
+}
 
 const data = [
   {
@@ -33,9 +33,9 @@ const data = [
     name: 'Example class 2',
     humanReadable: 'busy-shamrock-holmes',
   },
-];
+]
 
 export default {
   validator,
   data,
-};
+}

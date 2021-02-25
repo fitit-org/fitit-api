@@ -1,8 +1,8 @@
-import { IsString } from 'class-validator';
+import { IsString } from 'class-validator'
 
 class CreateClassDTO {
   @IsString()
-  public name: string;
+  public name: string
 }
 
-export default CreateClassDTO;
+export default CreateClassDTO

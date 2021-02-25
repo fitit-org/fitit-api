@@ -1,9 +1,9 @@
-import HttpException from './HttpException';
+import HttpException from './HttpException'
 
 class DBException extends HttpException {
   constructor() {
-    super(500, `Internal error`);
+    super(500, `Internal error`)
   }
 }
 
-export default DBException;
+export default DBException
