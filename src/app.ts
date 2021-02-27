@@ -3,7 +3,8 @@ import { json } from 'body-parser'
 import compression from 'compression'
 import helmet from 'helmet'
 import cors from 'cors'
-//import morgan from 'morgan';
+import morgan from 'morgan'
+import { LoggerStream } from './config/winston'
 import Controller from './types/controller.interface'
 import errorMiddleware from './middleware/error.middleware'
 import { createServer, Server } from 'https'
@@ -26,9 +27,9 @@ class App {
     this.app.use(cors())
     this.app.use(helmet())
     this.app.use(compression())
-    /*if (process.env.NODE_ENV !== 'production') {
-      this.app.use(morgan('combined'));
-    }*/
+    if (process.env.NODE_ENV !== 'production') {
+      this.app.use(morgan('combined', { stream: new LoggerStream() }))
+    }
   }
 
   private initializeControllers(controllers: Array<Controller>) {
