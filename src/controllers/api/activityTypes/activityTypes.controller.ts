@@ -34,7 +34,7 @@ class ActivityTypesController implements Controller {
       return response.send(allActivities)
     } catch (error) {
       console.log(error.stack)
-      return next(new DBException())
+      return next(new DBException(error))
     }
   }
 
@@ -56,7 +56,7 @@ class ActivityTypesController implements Controller {
       return response.send(activityType)
     } catch (error) {
       console.log(error.stack)
-      next(new DBException())
+      return next(new DBException(error))
     }
   }
 }

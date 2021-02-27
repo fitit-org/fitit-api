@@ -66,7 +66,7 @@ class ActivityLogsController implements Controller {
       return response.send(activities)
     } catch (error) {
       console.log(error.stack)
-      return next(new DBException())
+      return next(new DBException(error))
     }
   }
 
@@ -121,7 +121,7 @@ class ActivityLogsController implements Controller {
       return response.send(activity)
     } catch (error) {
       console.log(error.stack)
-      return next(new DBException())
+      return next(new DBException(error))
     }
   }
 
@@ -171,7 +171,7 @@ class ActivityLogsController implements Controller {
       return response.status(201).send(createdActivity)
     } catch (error) {
       console.log(error.stack)
-      return next(new DBException())
+      return next(new DBException(error))
     }
   }
 
@@ -244,7 +244,7 @@ class ActivityLogsController implements Controller {
       return response.send(updatedActivity)
     } catch (error) {
       console.log(error.stack)
-      return next(new DBException())
+      return next(new DBException(error))
     }
   }
 }

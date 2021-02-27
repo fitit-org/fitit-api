@@ -118,7 +118,7 @@ class ClassesController implements Controller {
       }
     } catch (error) {
       console.log(error.stack)
-      return next(new DBException())
+      return next(new DBException(error))
     }
   }
 
@@ -145,7 +145,7 @@ class ClassesController implements Controller {
       return response.send(classObject)
     } catch (error) {
       console.log(error.stack)
-      return next(new DBException())
+      return next(new DBException(error))
     }
   }
 
@@ -192,7 +192,7 @@ class ClassesController implements Controller {
       return response.send(users)
     } catch (error) {
       console.log(error.stack)
-      return next(new DBException())
+      return next(new DBException(error))
     }
   }
 
@@ -221,7 +221,7 @@ class ClassesController implements Controller {
       return response.send({ code: classCode })
     } catch (error) {
       console.log(error.stack)
-      return next(new DBException())
+      return next(new DBException(error))
     }
   }
 
@@ -251,7 +251,7 @@ class ClassesController implements Controller {
       return response.status(201).send(createdClass)
     } catch (error) {
       console.log(error.stack)
-      return next(new DBException())
+      return next(new DBException(error))
     }
   }
 
@@ -311,7 +311,7 @@ class ClassesController implements Controller {
       return response.status(201).send({ classes: classes, users: users })
     } catch (error) {
       console.log(error.stack)
-      return next(new DBException())
+      return next(new DBException(error))
     }
   }
 
@@ -365,7 +365,7 @@ class ClassesController implements Controller {
       return response.status(200).send({ class: classResponse, users: users })
     } catch (error) {
       console.log(error.stack)
-      return next(new DBException())
+      return next(new DBException(error))
     }
   }
 }

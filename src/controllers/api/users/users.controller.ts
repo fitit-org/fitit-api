@@ -46,7 +46,7 @@ class UsersController {
       return response.send(userObject)
     } catch (error) {
       console.log(error.stack)
-      return next(new DBException())
+      return next(new DBException(error))
     }
   }
 
@@ -105,7 +105,7 @@ class UsersController {
       return response.send(userObject)
     } catch (error) {
       console.log(error.stack)
-      return next(new DBException())
+      return next(new DBException(error))
     }
   }
 
@@ -125,7 +125,7 @@ class UsersController {
       response.send(populatedUser)
     } catch (error) {
       console.log(error.stack)
-      next(new DBException())
+      return next(new DBException(error))
     }
   }
 
@@ -148,11 +148,11 @@ class UsersController {
       if (userRemovalSuccess.deletedCount === 1) {
         return response.status(204).send()
       } else {
-        return next(new DBException())
+        return next(new DBException({}))
       }
     } catch (error) {
       console.log(error.stack)
-      return next(new DBException())
+      return next(new DBException(error))
     }
   }
 }

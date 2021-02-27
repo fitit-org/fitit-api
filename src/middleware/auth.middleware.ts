@@ -25,7 +25,7 @@ async function authMiddleware(
       const id = verificationResponse._id
       try {
         if (!ObjectId.isValid(id)) {
-          next(new WrongAuthenticationTokenException())
+          return next(new WrongAuthenticationTokenException())
         } else {
           const user = (await (await MongoHelper.getDB())
             .collection('users')
@@ -37,18 +37,18 @@ async function authMiddleware(
             request.user = user
             next()
           } else {
-            next(new WrongAuthenticationTokenException())
+            return next(new WrongAuthenticationTokenException())
           }
         }
       } catch (error) {
         console.log(error.stack)
-        next(new DBException())
+        return next(new DBException(error))
       }
     } catch (error) {
-      next(new WrongAuthenticationTokenException())
+      return next(new WrongAuthenticationTokenException())
     }
   } else {
-    next(new AuthenticationTokenMissingException())
+    return next(new AuthenticationTokenMissingException())
   }
 }
 

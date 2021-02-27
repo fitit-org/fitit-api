@@ -105,7 +105,7 @@ class AuthenticationController implements Controller {
         .send({ user: registeredUser, token: tokenData.token })
     } catch (err) {
       console.log(err.stack)
-      return next(new DBException())
+      return next(new DBException(err))
     }
   }
 
@@ -135,7 +135,7 @@ class AuthenticationController implements Controller {
       return response.send({ user, token: tokenData.token })
     } catch (err) {
       console.log(err.stack)
-      next(new DBException())
+      return next(new DBException(err))
     }
   }
 
