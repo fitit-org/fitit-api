@@ -14,7 +14,7 @@ describe('AUTH', () => {
           name: 'NewPupilName',
           surname: 'NewPupilSurname',
           password: ">'!Xr36Q.~p!sE`j",
-          classId: 'busy-shamrock-holmes',
+          code: 'busy-shamrock-holmes',
           email: 'newpupil@example.com',
         })
         .then(async (res) => {
@@ -47,7 +47,7 @@ describe('AUTH', () => {
           name: 'NewTeacherName',
           surname: 'NewTeacherSurname',
           password: ">'!Xr36Q.~p!sE`j",
-          classId: 'AffGLJKqRRlggnB8skbzd',
+          code: 'AffGLJKqRRlggnB8skbzd',
           email: 'newteacher@example.com',
         })
         .then(async (res) => {
@@ -77,7 +77,7 @@ describe('AUTH', () => {
           name: 'NewUserName',
           surname: 'NewUserSurname',
           password: ">'!Xr36Q.~p!sE`j",
-          classId: 'non-existing-classid',
+          code: 'non-existing-classid',
           email: 'newuser@example.com',
         })
         .then((res) => {
@@ -97,7 +97,7 @@ describe('AUTH', () => {
           name: 'NewUserName',
           surname: 'NewUserSurname',
           password: ">'!Xr36Q.~p!sE`j",
-          classId: 'busy-shamrock-holmes',
+          code: 'busy-shamrock-holmes',
           email: 'testpupil.email@example.com',
         })
         .then((res) => {

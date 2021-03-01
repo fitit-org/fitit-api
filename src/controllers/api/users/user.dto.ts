@@ -29,7 +29,7 @@ class CreateUserDto {
   public password: string
 
   @IsString()
-  public classId: string
+  public code: string
 
   @IsEmail()
   @IsString()

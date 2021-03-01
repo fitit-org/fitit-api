@@ -60,7 +60,7 @@ class AuthenticationController implements Controller {
         return next(new UserWithThatEmailAlreadyExistsException(userData.email))
       }
       const teacherCodesCount = await this.teacherCodes
-        .find({ humanReadable: userData.classId })
+        .find({ humanReadable: userData.code })
         .count()
       const userInsertObject: Record<string, unknown> = {}
       const hashedPassword = await hash(userData.password, 10)
@@ -80,16 +80,16 @@ class AuthenticationController implements Controller {
         userInsertObject.birthDate = new Date(userData.birthDate)
       }
       if (teacherCodesCount !== 0) {
-        await this.teacherCodes.deleteOne({ humanReadable: userData.classId })
+        await this.teacherCodes.deleteOne({ humanReadable: userData.code })
         userInsertObject.isTeacher = true
         userInsertObject.class_ids = [] as Array<ObjectId>
       } else {
         userInsertObject.isTeacher = false
         const classObj = (await this.classes.findOne({
-          humanReadable: userData.classId,
+          humanReadable: userData.code,
         })) as Class
         if (!classObj) {
-          return next(new NoSuchClassException(userData.classId))
+          return next(new NoSuchClassException(userData.code))
         }
         userInsertObject.class_ids = [classObj._id]
       }
