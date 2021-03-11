@@ -10,6 +10,7 @@ export async function popualateUsers(
   populateClass = true,
   populateActivityTypes = true
 ): Promise<Array<User>> {
+  const userArr: Array<User> = []
   await Promise.all(
     users.map(async (user) => {
       const populatedUser = await populateUser(
@@ -17,10 +18,10 @@ export async function popualateUsers(
         populateClass,
         populateActivityTypes
       )
-      user = populatedUser
+      userArr.push(populatedUser)
     })
   )
-  return users
+  return userArr
 }
 
 export async function populateUser(
@@ -29,7 +30,7 @@ export async function populateUser(
   populateActivityTypes = true
 ): Promise<User> {
   const userObj = { ...user }
-  if (user.activityLog_ids) {
+  if (user.activityLog_ids !== undefined && user.activityLog_ids.length > 0) {
     userObj.activityLog_ids = (await (await MongoHelper.getDB())
       .collection('activityLogs')
       .find({
@@ -54,6 +55,7 @@ export async function populateUser(
       })
       .toArray()) as Array<Class>
   }
+  console.log('IMPORTANT: ', userObj.activityLog_ids)
   return userObj
 }
 
