@@ -55,7 +55,6 @@ export async function populateUser(
       })
       .toArray()) as Array<Class>
   }
-  console.log('IMPORTANT: ', userObj.activityLog_ids)
   return userObj
 }
 

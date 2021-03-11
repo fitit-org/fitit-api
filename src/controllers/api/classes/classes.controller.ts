@@ -91,6 +91,7 @@ class ClassesController implements Controller {
                 surname: 1,
                 activityLog_ids: 1,
                 isTeacher: 1,
+                isActive: 1,
               },
             }
           )
