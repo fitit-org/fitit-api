@@ -246,6 +246,10 @@ class ClassesController implements Controller {
         humanReadable: code,
         isActive: true,
       })
+      await this.users.updateOne(
+        { _id: request.user._id },
+        { $push: { class_ids: insertResult.insertedId } }
+      )
       const createdClass = (await this.classes.findOne({
         _id: insertResult.insertedId,
       })) as Class
