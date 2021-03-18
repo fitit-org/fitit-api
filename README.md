@@ -13,7 +13,7 @@ Required variables:\
   `JWT_SECRET`\
   `MONGO_DB`\
   `MONGO_URL`\
-  PORT
+  `PORT`\
 
 ## Run it
 
