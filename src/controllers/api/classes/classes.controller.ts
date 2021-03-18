@@ -92,6 +92,7 @@ class ClassesController implements Controller {
                 activityLog_ids: 1,
                 isTeacher: 1,
                 isActive: 1,
+                class_ids: 1,
               },
             }
           )
@@ -111,6 +112,7 @@ class ClassesController implements Controller {
                 name: 1,
                 surname: 1,
                 isTeacher: 1,
+                class_ids: 1,
               },
             }
           )
