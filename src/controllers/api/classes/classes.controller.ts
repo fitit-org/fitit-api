@@ -239,11 +239,11 @@ class ClassesController implements Controller {
       const code = getHR(classData.name)
       const insertResult = await (this.classes as Collection<{
         name: string
-        code: string
+        humanReadable: string
         isActive: boolean
       }>).insertOne({
         name: classData.name,
-        code: code,
+        humanReadable: code,
         isActive: true,
       })
       const createdClass = (await this.classes.findOne({
