@@ -213,7 +213,14 @@ class ClassesController implements Controller {
       if (classCount === 0) {
         return next(new ClassNotFoundException(request.params.id))
       }
-      if (!(request.user.class_ids as Array<ObjectId>).includes(id)) {
+      let matchNum = 0
+      for (const classId of request.user.class_ids as Array<ObjectId>) {
+        if (classId.equals(id)) {
+          matchNum++
+          break
+        }
+      }
+      if (matchNum === 0) {
         return next(new UnauthorizedToViewClassException(request.params.id))
       }
       if (!request.user.isTeacher) {
